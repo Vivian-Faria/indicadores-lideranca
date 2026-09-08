@@ -1,0 +1,10 @@
+{
+  "name": "painel-orion",
+  "version": "2.1.0",
+  "description": "Painel de indicadores dos supervisores e lideres Orion",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Órion</title>
+<style>
+  :root {
+    --tinta: #0F1B2B;
+    --verde: #1C7A4A;
+    --vermelho: #A8291A;
+    --ambar: #B26A00;
+    --linha: #DDE3EA;
+    --fundo: #F4F6F8;
+    --texto: #1C2430;
+    --fraco: #6B7684;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fundo); color: var(--texto);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px; line-height: 1.5;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+  /* cabeçalho */
+  header { background: var(--tinta); color: #fff; }
+  header .wrap { padding-top: 20px; }
+  .marca { font-size: 11px; letter-spacing: .22em; color: #8EA3BD; margin-bottom: 2px; }
+  header h1 { margin: 0 0 16px; font-size: 24px; letter-spacing: -.4px; }
+  nav { display: flex; gap: 3px; overflow-x: auto; }
+  nav button {
+    background: none; border: 0; color: #C9D6E5; font: inherit; font-size: 14px;
+    padding: 10px 16px; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap;
+  }
+  nav button:hover { background: rgba(255,255,255,.1); color: #fff; }
+  nav button[aria-current="true"] { background: var(--fundo); color: var(--tinta); font-weight: 600; }
+
+  main { padding: 26px 0 60px; }
+
+  /* blocos */
+  .cartao { background: #fff; border: 1px solid var(--linha); border-radius: 8px; padding: 18px; margin-bottom: 18px; }
+  .cartao h2 { margin: 0 0 4px; font-size: 17px; color: var(--tinta); }
+  .cartao h2 + p { margin: 0 0 14px; color: var(--fraco); font-size: 14px; }
+  h3.sub { font-size: 13px; color: var(--ambar); margin: 0 0 8px; font-weight: 600; }
+
+  /* formulários */
+  input, select, button.acao { font: inherit; }
+  input[type=text], input[type=number], input[type=date], select {
+    padding: 8px 10px; border: 1px solid #CBD5E0; border-radius: 6px; background: #fff;
+    width: 100%; max-width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid rgba(28,122,74,.35); outline-offset: 1px; }
+  label.campo { display: block; }
+  label.campo .rot { font-size: 13px; font-weight: 600; display: block; }
+  label.campo .dica { font-size: 11px; color: #94A3B3; display: block; margin-bottom: 3px; }
+
+  button.acao {
+    background: var(--tinta); color: #fff; border: 0; border-radius: 6px;
+    padding: 9px 16px; cursor: pointer; font-size: 14px; font-weight: 500;
+  }
+  button.acao:hover { background: #1B2C44; }
+  button.acao.verde { background: var(--verde); }
+  button.acao.verde:hover { background: #166139; }
+  button.acao.vazio { background: #fff; color: var(--fraco); border: 1px solid #CBD5E0; }
+  button.mini { background: none; border: 0; color: #94A3B3; cursor: pointer; font-size: 12px; padding: 0; }
+  button.mini:hover { color: var(--vermelho); }
+
+  .grade { display: grid; gap: 12px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .g5 { grid-template-columns: repeat(5, 1fr); }
+  .linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .empurra { margin-left: auto; }
+
+  /* tabelas */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    background: var(--tinta); color: #fff; text-align: left; padding: 8px 10px;
+    font-size: 11px; letter-spacing: .06em; font-weight: 600;
+  }
+  td { padding: 9px 10px; border-bottom: 1px solid #E8EDF2; vertical-align: top; }
+  tr:nth-child(even) td { background: #F9FAFB; }
+  td.n { text-align: right; font-weight: 700; color: var(--tinta); }
+  .rolagem { overflow-x: auto; }
+
+  .ok { color: var(--verde); font-weight: 600; }
+  .nao { color: var(--vermelho); font-weight: 600; }
+
+  /* pessoas */
+  .pessoas { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .pessoa { background: #fff; border: 1px solid var(--linha); border-radius: 8px; overflow: hidden; }
+  .pessoa .topo { display: flex; gap: 14px; padding: 14px; }
+  .moldura {
+    width: 78px; height: 96px; border-radius: 6px; background: #F1F4F7;
+    border: 1px dashed #B8C4D2; overflow: hidden; display: flex;
+    align-items: center; justify-content: center; cursor: pointer; flex: 0 0 auto;
+    font-size: 11px; color: #94A3B3; text-align: center;
+  }
+  .moldura img { width: 100%; height: 100%; object-fit: cover; }
+  .pessoa .nome { font-weight: 700; color: var(--tinta); }
+  .pessoa .cargo { font-size: 14px; color: var(--fraco); }
+  .pessoa .metas { border-top: 1px solid #EEF2F5; background: #F9FAFB; padding: 12px 14px; }
+  .pessoa .metas div { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+  .pessoa .metas b { color: var(--tinta); }
+
+  /* alternadores de penalidade */
+  .chave {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 14px;
+    border: 1px solid #CBD5E0; border-radius: 6px; padding: 7px 12px;
+    background: #fff; cursor: pointer;
+  }
+  .chave[data-on="1"] { border-color: var(--vermelho); background: #FDF6F4; color: var(--vermelho); }
+  .quadrado { width: 15px; height: 15px; border: 1px solid #94A3B3; border-radius: 3px; }
+  .chave[data-on="1"] .quadrado { background: var(--vermelho); border-color: var(--vermelho); }
+  .chave .pena { font-size: 12px; font-weight: 700; }
+
+  /* avisos */
+  .aviso { border-radius: 6px; padding: 12px 14px; font-size: 14px; margin-bottom: 16px; }
+  .aviso.ambar { background: #FDF6E8; border: 1px solid #F0D9A8; color: #8A5200; }
+  .vazio { text-align: center; color: var(--fraco); padding: 40px 0; font-size: 14px; }
+
+  /* destaque */
+  .poster { background: #fff; border: 2px solid var(--verde); border-radius: 8px; overflow: hidden; }
+  .poster .faixa { background: var(--tinta); color: #fff; text-align: center; padding: 22px 16px; }
+  .poster .faixa .local { font-size: 11px; letter-spacing: .22em; color: #8EA3BD; margin-bottom: 6px; }
+  .poster .faixa h2 { margin: 0; font-size: 30px; color: #FFC94D; }
+  .poster .corpo { padding: 24px; text-align: center; }
+  .poster .retrato {
+    width: 176px; height: 224px; margin: 0 auto; border-radius: 6px;
+    background: #F1F4F7; border: 1px solid var(--linha); overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    color: #94A3B3; font-size: 12px; padding: 0 14px;
+  }
+  .poster .retrato img { width: 100%; height: 100%; object-fit: cover; }
+  .poster .quem { font-size: 26px; font-weight: 700; color: var(--tinta); margin-top: 18px; }
+  .poster .papel { color: var(--fraco); font-size: 14px; }
+  .poster .pontos {
+    display: inline-block; background: var(--verde); color: #fff;
+    font-size: 21px; font-weight: 700; padding: 8px 30px; border-radius: 6px; margin-top: 14px;
+  }
+  .poster .porque { background: var(--verde); color: #fff; text-align: center; font-size: 11px; letter-spacing: .18em; padding: 7px; }
+  .poster table td { border-bottom: 1px solid #CFE3D7; }
+  .poster table tr:nth-child(even) td { background: #F2FAF5; }
+  .poster .rodape { background: var(--tinta); color: #fff; text-align: center; font-size: 12px; padding: 12px 16px; }
+  .poster .rodape span { color: #8EA3BD; }
+
+  /* gráficos */
+  .grafico { width: 100%; height: auto; display: block; }
+  .legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; margin-top: 10px; }
+  .legenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .bolinha { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* recado de salvamento */
+  #recado {
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px;
+    background: var(--verde); color: #fff; padding: 10px 18px; border-radius: 6px;
+    font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.18); display: none; z-index: 50;
+  }
+  #recado.erro { background: var(--vermelho); }
+
+  @media (max-width: 720px) {
+    .g5, .g4, .g3 { grid-template-columns: repeat(2, 1fr); }
+    .g2 { grid-template-columns: 1fr; }
+    header h1 { font-size: 20px; }
+  }
+  @media print {
+    header, nav, .naoimprime { display: none !important; }
+    body { background: #fff; }
+    .poster { border-color: #1C7A4A; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="marca">ÓRION</p>
+    <h1>Painel de indicadores</h1>
+    <nav id="abas"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="tela"></main>
+<div id="recado"></div>
+
+<script>
+/* =====================================================================
+   Regras de pontuação — espelham a Ficha de Cargo e o POP
+   Quatro blocos binários de 25 pontos. Descontos sobre o total.
+===================================================================== */
+const CARGOS = {
+  varanda: {
+    rotulo: "Supervisor Varanda", curto: "Varanda",
+    areaRotulo: "Nota Agiza", areaUnidade: "%", areaMeta: "maior ou igual a 80%",
+    areaBate: v => v >= 80, areaMargem: v => v - 80, temReembolso: false
+  },
+  expedicao: {
+    rotulo: "Líder de Expedição", curto: "Expedição",
+    areaRotulo: "Espera no chat", areaUnidade: " min", areaMeta: "até 3 minutos",
+    areaBate: v => v <= 3, areaMargem: v => 3 - v, temReembolso: true
+  }
+};
+
+const HUBS = ["Sion", "Buritis", "Cidade Nova", "Pampulha"];
+const CORES = ["#1C7A4A", "#0F1B2B", "#B26A00", "#A8291A", "#3D6E8C", "#6B4E9E"];
+
+const BRANCO = {
+  ponto: "", faltasNaoCobertas: "", area: "",
+  atrasos: "", faltasLider: "",
+  trocaIrregular: false, freelaExcedente: false, reembolsos: ""
+};
+
+const numero = v => (v === "" || v === null || v === undefined || isNaN(Number(v))) ? null : Number(v);
+
+/* Uma semana só conta se alguma coisa foi de fato lançada nela.
+   Sem isso, quem não tem nenhum lançamento ganharia os blocos
+   de cobertura e conduta de graça — zero falta, zero atraso. */
+const temLancamento = r =>
+  ["ponto", "faltasNaoCobertas", "area", "atrasos", "faltasLider", "reembolsos"]
+    .some(campo => numero(r[campo]) !== null) || r.trocaIrregular || r.freelaExcedente;
+
+function apurar(linhas, cargo) {
+  const l = (linhas || []).filter(Boolean).filter(temLancamento);
+  if (!l.length) return null;
+
+  const media = campo => {
+    const vs = l.map(r => numero(r[campo])).filter(v => v !== null);
+    return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+  };
+  const soma = campo => l.reduce((a, r) => a + (numero(r[campo]) ?? 0), 0);
+
+  const ponto = media("ponto");
+  const area = media("area");
+  const faltasNaoCobertas = soma("faltasNaoCobertas");
+  const atrasos = soma("atrasos");
+  const faltasLider = soma("faltasLider");
+  const reembolsos = cargo.temReembolso ? soma("reembolsos") : 0;
+  const troca = l.some(r => r.trocaIrregular);
+  const freela = l.some(r => r.freelaExcedente);
+
+  const blocos = {
+    ponto: ponto !== null && ponto >= 90,
+    cobertura: faltasNaoCobertas <= 2,
+    area: area !== null && cargo.areaBate(area),
+    conduta: atrasos <= 4 && faltasLider === 0
+  };
+  const ganhos = Object.values(blocos).filter(Boolean).length * 25;
+  const desconto = (troca ? 15 : 0) + (freela ? 15 : 0) + reembolsos * 5;
+
+  return {
+    ponto, area, faltasNaoCobertas, atrasos, faltasLider, reembolsos,
+    troca, freela, blocos, ganhos, desconto,
+    pontos: Math.max(0, ganhos - desconto), semanas: l.length
+  };
+}
+
+/* ---------- semanas: segunda a domingo, mês do domingo ---------- */
+const segundaDe = s => {
+  const d = new Date(s + "T12:00:00");
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+};
+const iso = d => d.toISOString().slice(0, 10);
+const dm = d => String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
+
+function semanaDe(dataStr) {
+  const seg = segundaDe(dataStr);
+  const dom = new Date(seg); dom.setDate(dom.getDate() + 6);
+  return {
+    id: iso(seg),
+    rotulo: dm(seg) + " a " + dm(dom),
+    mes: dom.getFullYear() + "-" + String(dom.getMonth() + 1).padStart(2, "0")
+  };
+}
+
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho",
+               "julho","agosto","setembro","outubro","novembro","dezembro"];
+const mesPorExtenso = m => {
+  if (!m) return "";
+  const [a, mm] = m.split("-");
+  return MESES[Number(mm) - 1] + " de " + a;
+};
+
+/* =====================================================================
+   Estado e comunicação com o servidor
+===================================================================== */
+let dados = { people: [], weeks: [], records: {} };
+let aba = "equipe";
+let mesEscolhido = null;
+let semanaAberta = null;
+let rascunho = {};
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function recado(texto, erro) {
+  const el = document.getElementById("recado");
+  el.textContent = texto;
+  el.className = erro ? "erro" : "";
+  el.style.display = "block";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = "none"; }, 2800);
+}
+
+/* A senha fica só na memória do navegador desta aba.
+   É enviada em toda chamada; o servidor é quem confere. */
+let senha = sessionStorage.getItem("@orion:senha") || "";
+
+const cabecalhos = extra => Object.assign({ "x-senha": senha }, extra || {});
+
+function pedirSenha(motivo) {
+  const s = prompt(motivo || "Digite a senha do painel:");
+  if (s === null) return false;
+  senha = s;
+  sessionStorage.setItem("@orion:senha", s);
+  return true;
+}
+
+async function carregar() {
+  for (let tentativa = 0; tentativa < 4; tentativa++) {
+    try {
+      const r = await fetch("/api/dados", { headers: cabecalhos() });
+      if (r.status === 401) {
+        if (!pedirSenha(tentativa === 0 ? "Digite a senha do painel:" : "Senha incorreta. Tente de novo:")) return false;
+        continue;
+      }
+      if (!r.ok) throw new Error();
+      dados = await r.json();
+      return true;
+    } catch (e) {
+      recado("Não foi possível ler os dados. Verifique sua conexão.", true);
+      return false;
+    }
+  }
+  return false;
+}
+
+async function salvar(msg) {
+  try {
+    const r = await fetch("/api/dados", {
+      method: "PUT",
+      headers: cabecalhos({ "Content-Type": "application/json" }),
+      body: JSON.stringify(dados)
+    });
+    if (r.status === 401) {
+      if (pedirSenha("A sessão expirou. Digite a senha de novo:")) return salvar(msg);
+      recado("Não salvo: senha não informada.", true);
+      return;
+    }
+    if (!r.ok) throw new Error();
+    if (msg) recado(msg);
+  } catch (e) {
+    recado("Não foi possível salvar. Tente de novo em instantes.", true);
+  }
+}
+
+const meses = () => [...new Set(dados.weeks.map(w => w.mes))].sort().reverse();
+
+/* =====================================================================
+   Navegação
+===================================================================== */
+const ABAS = [
+  ["equipe", "Equipe"],
+  ["apuracao", "Apuração"],
+  ["desempenho", "Desempenho"],
+  ["destaque", "Destaque do mês"]
+];
+
+function desenharAbas() {
+  document.getElementById("abas").innerHTML = ABAS.map(([id, t]) =>
+    `<button data-aba="${id}" aria-current="${aba === id}">${t}</button>`).join("");
+  document.querySelectorAll("nav button").forEach(b =>
+    b.onclick = () => { aba = b.dataset.aba; desenhar(); });
+}
+
+function desenhar() {
+  desenharAbas();
+  const tela = document.getElementById("tela");
+  if (aba === "equipe") telaEquipe(tela);
+  if (aba === "apuracao") telaApuracao(tela);
+  if (aba === "desempenho") telaDesempenho(tela);
+  if (aba === "destaque") telaDestaque(tela);
+  window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   1. EQUIPE
+===================================================================== */
+function telaEquipe(tela) {
+  tela.innerHTML = `
+    <div class="cartao">
+      <h2>Adicionar à equipe</h2>
+      <p>Cada pessoa é medida pelas metas do cargo dela.</p>
+      <div class="grade g4">
+        <input type="text" id="nvNome" placeholder="Nome" style="grid-column: span 2">
+        <select id="nvCargo">
+          <option value="varanda">Supervisor Varanda</option>
+          <option value="expedicao">Líder de Expedição</option>
+        </select>
+        <select id="nvHub">${HUBS.map(h => `<option>${h}</option>`).join("")}</select>
+      </div>
+      <div style="margin-top:12px"><button class="acao" id="btAdd">Adicionar</button></div>
+    </div>
+    <div id="listaPessoas"></div>`;
+
+  document.getElementById("btAdd").onclick = adicionarPessoa;
+  document.getElementById("nvNome").onkeydown = e => { if (e.key === "Enter") adicionarPessoa(); };
+  listarPessoas();
+}
+
+async function adicionarPessoa() {
+  const nome = document.getElementById("nvNome").value.trim();
+  if (!nome) return;
+  dados.people.push({
+    id: "p" + Date.now(),
+    nome,
+    cargo: document.getElementById("nvCargo").value,
+    hub: document.getElementById("nvHub").value,
+    foto: null
+  });
+  document.getElementById("nvNome").value = "";
+  await salvar(nome + " entrou na equipe.");
+  listarPessoas();
+}
+
+function listarPessoas() {
+  const alvo = document.getElementById("listaPessoas");
+  if (!dados.people.length) {
+    alvo.innerHTML = `<p class="vazio">Ainda não há ninguém cadastrado. Comece adicionando um supervisor ou líder acima.</p>`;
+    return;
+  }
+  alvo.innerHTML = `<div class="pessoas">` + dados.people.map(p => {
+    const c = CARGOS[p.cargo];
+    return `
+      <div class="pessoa">
+        <div class="topo">
+          <div>
+            <div class="moldura" data-foto="${p.id}">
+              ${p.foto ? `<img src="${p.foto}" alt="">` : "Enviar<br>foto"}
+            </div>
+            <input type="file" accept="image/*" id="arq-${p.id}" style="display:none">
+          </div>
+          <div style="min-width:0;flex:1">
+            <div class="nome">${esc(p.nome)}</div>
+            <div class="cargo">${c.rotulo}</div>
+            <div class="cargo" style="color:#94A3B3">${esc(p.hub)}</div>
+            <div style="margin-top:8px">
+              <button class="mini" data-remove="${p.id}">Remover</button>
+            </div>
+          </div>
+        </div>
+        <div class="metas">
+          <div><span>Ponto do time</span><b>90% ou mais</b></div>
+          <div><span>Faltas não cobertas</span><b>até 2 no mês</b></div>
+          <div><span>${c.areaRotulo}</span><b>${c.areaMeta}</b></div>
+          <div><span>Atrasos e faltas dele</span><b>até 4 · nenhuma</b></div>
+        </div>
+      </div>`;
+  }).join("") + `</div>`;
+
+  alvo.querySelectorAll("[data-foto]").forEach(el =>
+    el.onclick = () => document.getElementById("arq-" + el.dataset.foto).click());
+  dados.people.forEach(p => {
+    const inp = document.getElementById("arq-" + p.id);
+    if (inp) inp.onchange = e => enviarFoto(p, e.target.files && e.target.files[0]);
+  });
+  alvo.querySelectorAll("[data-remove]").forEach(b =>
+    b.onclick = () => removerPessoa(b.dataset.remove));
+}
+
+function enviarFoto(pessoa, arquivo) {
+  if (!arquivo) return;
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    const img = new Image();
+    img.onload = async () => {
+      const maior = 560;
+      const escala = Math.min(1, maior / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * escala);
+      cv.height = Math.round(img.height * escala);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      pessoa.foto = cv.toDataURL("image/jpeg", 0.82);
+      await salvar("Foto de " + pessoa.nome + " salva.");
+      listarPessoas();
+    };
+    img.src = leitor.result;
+  };
+  leitor.readAsDataURL(arquivo);
+}
+
+async function removerPessoa(id) {
+  const p = dados.people.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm("Remover " + p.nome + " e todos os lançamentos dessa pessoa?")) return;
+  dados.people = dados.people.filter(x => x.id !== id);
+  Object.keys(dados.records).forEach(sem => { delete dados.records[sem][id]; });
+  await salvar(p.nome + " saiu da equipe.");
+  listarPessoas();
+}
+
+/* =====================================================================
+   2. APURAÇÃO SEMANAL
+===================================================================== */
+function telaApuracao(tela) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  tela.innerHTML = `
+    <div class="cartao">
+      <h2>Abrir uma semana</h2>
+      <p>Escolha qualquer dia da semana que vai lançar. A semana vai de segunda a domingo.</p>
+      <div class="linha">
+        <input type="date" id="dtSemana" value="${hoje}" style="width:auto">
+        <button class="acao" id="btAbrir">Abrir semana</button>
+        ${dados.weeks.length ? `
+          <select id="selSemana" class="empurra" style="width:auto">
+            <option value="">Semanas já lançadas</option>
+            ${dados.weeks.map(w => `<option value="${w.id}" ${w.id === semanaAberta ? "selected" : ""}>${w.rotulo} — ${mesPorExtenso(w.mes)}</option>`).join("")}
+          </select>` : ""}
+      </div>
+    </div>
+    <div id="areaLancamento"></div>`;
+
+  document.getElementById("btAbrir").onclick = () => {
+    const s = semanaDe(document.getElementById("dtSemana").value);
+    if (!dados.weeks.find(w => w.id === s.id)) {
+      dados.weeks.push(s);
+      dados.weeks.sort((a, b) => a.id < b.id ? 1 : -1);
+      salvar();
+    }
+    semanaAberta = s.id;
+    telaApuracao(tela);
+  };
+  const sel = document.getElementById("selSemana");
+  if (sel) sel.onchange = () => { semanaAberta = sel.value || null; telaApuracao(tela); };
+
+  desenharLancamento();
+}
+
+function desenharLancamento() {
+  const alvo = document.getElementById("areaLancamento");
+  const semana = dados.weeks.find(w => w.id === semanaAberta);
+
+  if (!semana) { alvo.innerHTML = `<p class="vazio">Abra uma semana para começar a lançar os números.</p>`; return; }
+  if (!dados.people.length) { alvo.innerHTML = `<p class="vazio">Cadastre a equipe antes de lançar a apuração.</p>`; return; }
+
+  const salvos = dados.records[semana.id] || {};
+  rascunho = {};
+  dados.people.forEach(p => { rascunho[p.id] = Object.assign({}, BRANCO, salvos[p.id] || {}); });
+
+  alvo.innerHTML = `
+    <div class="linha" style="margin-bottom:14px">
+      <h2 style="margin:0;font-size:17px;color:var(--tinta)">
+        Semana de ${semana.rotulo}
+        <span style="font-weight:400;color:var(--fraco)">— fecha em ${mesPorExtenso(semana.mes)}</span>
+      </h2>
+      <span class="linha empurra">
+        <button class="acao vazio" id="btApagar">Apagar esta semana</button>
+        <button class="acao verde" id="btSalvarTopo">Salvar semana</button>
+      </span>
+    </div>
+    ${dados.people.map(p => {
+      const c = CARGOS[p.cargo], d = rascunho[p.id];
+      return `
+      <div class="cartao">
+        <div class="linha" style="margin-bottom:14px">
+          <b style="color:var(--tinta)">${esc(p.nome)}</b>
+          <span style="color:var(--fraco);font-size:14px">${c.rotulo} — ${esc(p.hub)}</span>
+        </div>
+        <div class="grade g5">
+          ${campo(p.id, "ponto", "Ponto do time", "% de batidas corretas", d.ponto)}
+          ${campo(p.id, "faltasNaoCobertas", "Faltas não cobertas", "postos vazios na semana", d.faltasNaoCobertas)}
+          ${campo(p.id, "area", c.areaRotulo, "meta: " + c.areaMeta, d.area)}
+          ${campo(p.id, "atrasos", "Atrasos dele", "de até 15 minutos", d.atrasos)}
+          ${campo(p.id, "faltasLider", "Faltas dele", "nenhuma no mês", d.faltasLider)}
+        </div>
+        <div class="linha" style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF2F5">
+          <button class="chave" data-chave="${p.id}|trocaIrregular" data-on="${d.trocaIrregular ? 1 : 0}">
+            <span class="quadrado"></span> Troca de escala fora do processo <span class="pena">−15</span>
+          </button>
+          <button class="chave" data-chave="${p.id}|freelaExcedente" data-on="${d.freelaExcedente ? 1 : 0}">
+            <span class="quadrado"></span> Freela acima do limite da escala <span class="pena">−15</span>
+          </button>
+          ${c.temReembolso ? `
+            <span class="linha" style="gap:8px">
+              <span style="font-size:14px">Reembolsos por pedido errado</span>
+              <input type="number" min="0" style="width:70px" data-campo="${p.id}|reembolsos" value="${d.reembolsos}">
+              <span style="font-size:12px;color:var(--ambar);font-weight:600">−5 cada</span>
+            </span>` : ""}
+        </div>
+      </div>`;
+    }).join("")}
+    <div style="text-align:right"><button class="acao verde" id="btSalvarBase">Salvar semana</button></div>`;
+
+  alvo.querySelectorAll("[data-campo]").forEach(inp => {
+    inp.oninput = () => {
+      const [pid, campo] = inp.dataset.campo.split("|");
+      rascunho[pid][campo] = inp.value;
+    };
+  });
+  alvo.querySelectorAll("[data-chave]").forEach(bt => {
+    bt.onclick = () => {
+      const [pid, campo] = bt.dataset.chave.split("|");
+      const novo = !rascunho[pid][campo];
+      rascunho[pid][campo] = novo;
+      bt.dataset.on = novo ? 1 : 0;
+    };
+  });
+  const gravar = async () => {
+    dados.records[semanaAberta] = JSON.parse(JSON.stringify(rascunho));
+    await salvar("Semana de " + semana.rotulo + " salva.");
+  };
+  document.getElementById("btSalvarTopo").onclick = gravar;
+  document.getElementById("btSalvarBase").onclick = gravar;
+  document.getElementById("btApagar").onclick = () => apagarSemana(semana);
+}
+
+/* Apaga a semana e todos os lançamentos dela. Não tem volta —
+   por isso a confirmação diz exatamente o que vai sumir. */
+async function apagarSemana(semana) {
+  const lancados = Object.values(dados.records[semana.id] || {})
+    .filter(temLancamento).length;
+
+  const texto = lancados
+    ? `Apagar a semana de ${semana.rotulo} e os lançamentos de ${lancados} ${lancados === 1 ? "pessoa" : "pessoas"}?\n\nIsso não pode ser desfeito.`
+    : `Apagar a semana de ${semana.rotulo}?`;
+  if (!confirm(texto)) return;
+
+  delete dados.records[semana.id];
+  dados.weeks = dados.weeks.filter(w => w.id !== semana.id);
+  semanaAberta = dados.weeks.length ? dados.weeks[0].id : null;
+
+  await salvar("Semana de " + semana.rotulo + " apagada.");
+  telaApuracao(document.getElementById("tela"));
+}
+
+function campo(pid, nome, rotulo, dica, valor) {
+  return `<label class="campo">
+    <span class="rot">${rotulo}</span>
+    <span class="dica">${dica}</span>
+    <input type="number" step="any" data-campo="${pid}|${nome}" value="${valor}">
+  </label>`;
+}
+
+/* =====================================================================
+   3. DESEMPENHO
+===================================================================== */
+function classificacao(mes) {
+  const semanas = dados.weeks.filter(w => w.mes === mes);
+  return dados.people.map(p => {
+    const linhas = semanas.map(w => (dados.records[w.id] || {})[p.id]).filter(Boolean);
+    const a = apurar(linhas, CARGOS[p.cargo]);
+    return a ? { pessoa: p, a } : null;
+  }).filter(Boolean).sort((x, y) => {
+    if (y.a.pontos !== x.a.pontos) return y.a.pontos - x.a.pontos;
+    if ((y.a.ponto ?? 0) !== (x.a.ponto ?? 0)) return (y.a.ponto ?? 0) - (x.a.ponto ?? 0);
+    if (x.a.faltasNaoCobertas !== y.a.faltasNaoCobertas) return x.a.faltasNaoCobertas - y.a.faltasNaoCobertas;
+    const mx = CARGOS[x.pessoa.cargo].areaMargem(x.a.area ?? 0);
+    const my = CARGOS[y.pessoa.cargo].areaMargem(y.a.area ?? 0);
+    if (my !== mx) return my - mx;
+    return x.a.desconto - y.a.desconto;
+  });
+}
+
+function telaDesempenho(tela) {
+  const ms = meses();
+  if (!ms.length) { tela.innerHTML = `<p class="vazio">Lance ao menos uma semana para ver o desempenho.</p>`; return; }
+  if (!mesEscolhido || !ms.includes(mesEscolhido)) mesEscolhido = ms[0];
+
+  const semanas = dados.weeks.filter(w => w.mes === mesEscolhido).sort((a, b) => a.id < b.id ? -1 : 1);
+  const cls = classificacao(mesEscolhido);
+
+  /* pontuação acumulada, semana a semana */
+  const serie = semanas.map((w, i) => {
+    const ate = semanas.slice(0, i + 1);
+    const ponto = { rotulo: w.rotulo, valores: {} };
+    dados.people.forEach(p => {
+      const linhas = ate.map(x => (dados.records[x.id] || {})[p.id]).filter(Boolean);
+      const a = apurar(linhas, CARGOS[p.cargo]);
+      if (a) ponto.valores[p.id] = a.pontos;
+    });
+    return ponto;
+  });
+
+  tela.innerHTML = `
+    <div class="linha" style="margin-bottom:16px">
+      <select id="selMes" style="width:auto">
+        ${ms.map(m => `<option value="${m}" ${m === mesEscolhido ? "selected" : ""}>${mesPorExtenso(m)}</option>`).join("")}
+      </select>
+      <span style="color:var(--fraco);font-size:14px">
+        ${semanas.length} ${semanas.length === 1 ? "semana lançada" : "semanas lançadas"}
+      </span>
+    </div>
+    ${!cls.length ? `<p class="vazio">Nenhum lançamento neste mês.</p>` : `
+      <div class="cartao">
+        <h2>Pontuação ao longo do mês</h2>
+        <p>Cada ponto é o resultado do mês até aquela semana.</p>
+        ${graficoLinha(serie)}
+        <div class="legenda">
+          ${dados.people.map((p, i) => `<span><i class="bolinha" style="background:${CORES[i % CORES.length]}"></i>${esc(p.nome)}</span>`).join("")}
+        </div>
+      </div>
+
+      <div class="cartao">
+        <h2>Comparativo do mês</h2>
+        ${graficoBarras(cls)}
+      </div>
+
+      <div class="cartao" style="padding:0;overflow:hidden">
+        <h2 style="padding:18px 18px 12px">Detalhe por pessoa</h2>
+        <div class="rolagem">
+          <table>
+            <thead><tr>
+              <th>Pessoa</th><th>Ponto</th><th>Cobertura</th><th>Área</th>
+              <th>Conduta</th><th>Descontos</th><th style="text-align:right">Pontos</th>
+            </tr></thead>
+            <tbody>
+              ${cls.map(({ pessoa, a }) => {
+                const c = CARGOS[pessoa.cargo];
+                return `<tr>
+                  <td><b style="color:var(--tinta)">${esc(pessoa.nome)}</b>
+                      <span style="display:block;font-size:11px;color:#94A3B3">${c.curto} — ${esc(pessoa.hub)}</span></td>
+                  ${cel(a.blocos.ponto, a.ponto === null ? "—" : a.ponto.toFixed(1) + "%")}
+                  ${cel(a.blocos.cobertura, a.faltasNaoCobertas + (a.faltasNaoCobertas === 1 ? " falta" : " faltas"))}
+                  ${cel(a.blocos.area, a.area === null ? "—" : a.area.toFixed(1) + c.areaUnidade)}
+                  ${cel(a.blocos.conduta, a.atrasos + " atrasos · " + a.faltasLider + " faltas")}
+                  <td style="color:var(--ambar);font-weight:600">${a.desconto ? "−" + a.desconto : "0"}</td>
+                  <td class="n">${a.pontos}</td>
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>`}`;
+
+  document.getElementById("selMes").onchange = e => { mesEscolhido = e.target.value; telaDesempenho(tela); };
+}
+
+const cel = (ok, texto) =>
+  `<td><span class="${ok ? "ok" : "nao"}">${ok ? "✓" : "✕"}</span> ${texto}</td>`;
+
+/* ---------- gráficos em SVG, desenhados à mão ---------- */
+function graficoLinha(serie) {
+  const L = 44, R = 16, T = 14, B = 34, W = 760, H = 280;
+  const larg = W - L - R, alt = H - T - B;
+  const n = serie.length;
+  const x = i => n === 1 ? L + larg / 2 : L + (larg * i) / (n - 1);
+  const y = v => T + alt - (alt * v) / 100;
+
+  let eixos = "";
+  [0, 25, 50, 75, 100].forEach(v => {
+    eixos += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" stroke="#E8EDF2"/>
+              <text x="${L - 8}" y="${y(v) + 4}" font-size="11" fill="#6B7684" text-anchor="end">${v}</text>`;
+  });
+  serie.forEach((s, i) => {
+    eixos += `<text x="${x(i)}" y="${H - 12}" font-size="11" fill="#6B7684" text-anchor="middle">${s.rotulo}</text>`;
+  });
+
+  let linhas = "";
+  dados.people.forEach((p, idx) => {
+    const cor = CORES[idx % CORES.length];
+    const pts = serie.map((s, i) => s.valores[p.id] === undefined ? null : [x(i), y(s.valores[p.id])]).filter(Boolean);
+    if (!pts.length) return;
+    linhas += `<polyline fill="none" stroke="${cor}" stroke-width="2.5"
+                 points="${pts.map(q => q[0] + "," + q[1]).join(" ")}"/>`;
+    pts.forEach(q => { linhas += `<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${cor}"/>`; });
+  });
+
+  return `<svg class="grafico" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${eixos}${linhas}</svg>`;
+}
+
+function graficoBarras(cls) {
+  const L = 44, R = 16, T = 14, B = 46, W = 760, H = 260;
+  const larg = W - L - R, alt = H - T - B;
+  const n = cls.length || 1;
+  const passo = larg / n, largBarra = Math.min(78, passo * 0.6);
+  const y = v => T + alt - (alt * v) / 100;
+
+  let eixos = "";
+  [0, 25, 50, 75, 100].forEach(v => {
+    eixos += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" stroke="#E8EDF2"/>
+              <text x="${L - 8}" y="${y(v) + 4}" font-size="11" fill="#6B7684" text-anchor="end">${v}</text>`;
+  });
+
+  let barras = "";
+  cls.forEach(({ pessoa, a }, i) => {
+    const cx = L + passo * i + passo / 2;
+    const altura = Math.max(2, (alt * a.pontos) / 100);
+    barras += `<rect x="${cx - largBarra / 2}" y="${y(a.pontos)}" width="${largBarra}" height="${altura}"
+                 fill="#1C7A4A" rx="4"/>
+               <text x="${cx}" y="${y(a.pontos) - 7}" font-size="12" font-weight="700" fill="#0F1B2B" text-anchor="middle">${a.pontos}</text>
+               <text x="${cx}" y="${H - 26}" font-size="11" fill="#6B7684" text-anchor="middle">${esc(pessoa.nome.split(" ")[0])}</text>
+               <text x="${cx}" y="${H - 12}" font-size="10" fill="#94A3B3" text-anchor="middle">${esc(pessoa.hub)}</text>`;
+  });
+
+  return `<svg class="grafico" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${eixos}${barras}</svg>`;
+}
+
+/* =====================================================================
+   4. DESTAQUE DO MÊS
+===================================================================== */
+function telaDestaque(tela) {
+  const ms = meses();
+  if (!ms.length) { tela.innerHTML = `<p class="vazio">Lance ao menos uma semana para apurar o destaque.</p>`; return; }
+  if (!mesEscolhido || !ms.includes(mesEscolhido)) mesEscolhido = ms[0];
+
+  const cls = classificacao(mesEscolhido);
+  const campeao = cls[0];
+  const empate = campeao && cls.filter(x => x.a.pontos === campeao.a.pontos).length > 1;
+
+  tela.innerHTML = `
+    <div class="linha naoimprime" style="margin-bottom:16px">
+      <select id="selMesD" style="width:auto">
+        ${ms.map(m => `<option value="${m}" ${m === mesEscolhido ? "selected" : ""}>${mesPorExtenso(m)}</option>`).join("")}
+      </select>
+      <button class="acao vazio empurra" id="btImprimir">Imprimir o quadro</button>
+    </div>
+    ${!campeao ? `<p class="vazio">Nenhum lançamento neste mês.</p>` : `
+      ${empate ? `<div class="aviso ambar naoimprime">
+        Houve empate na pontuação. O desempate seguiu, nesta ordem: ponto do time,
+        faltas não cobertas, margem no indicador da área e descontos.
+      </div>` : ""}
+
+      <div class="poster">
+        <div class="faixa">
+          <div class="local">${esc(campeao.pessoa.hub)} — ${mesPorExtenso(mesEscolhido)}</div>
+          <h2>Destaque do mês</h2>
+        </div>
+        <div class="corpo">
+          <div class="retrato">
+            ${campeao.pessoa.foto ? `<img src="${campeao.pessoa.foto}" alt="">` : "Envie a foto na aba Equipe"}
+          </div>
+          <div class="quem">${esc(campeao.pessoa.nome)}</div>
+          <div class="papel">${CARGOS[campeao.pessoa.cargo].rotulo} — ${esc(campeao.pessoa.hub)}</div>
+          <div class="pontos">${campeao.a.pontos} pontos</div>
+        </div>
+        <div class="porque">POR QUE GANHOU</div>
+        <table>
+          ${criterio("Ponto do time", campeao.a.blocos.ponto,
+              campeao.a.ponto === null ? "—" : campeao.a.ponto.toFixed(1) + "%")}
+          ${criterio("Cobertura de escala", campeao.a.blocos.cobertura,
+              campeao.a.faltasNaoCobertas + (campeao.a.faltasNaoCobertas === 1 ? " falta não coberta" : " faltas não cobertas"))}
+          ${criterio(CARGOS[campeao.pessoa.cargo].areaRotulo, campeao.a.blocos.area,
+              campeao.a.area === null ? "—" : campeao.a.area.toFixed(1) + CARGOS[campeao.pessoa.cargo].areaUnidade)}
+          ${criterio("Conduta própria", campeao.a.blocos.conduta,
+              campeao.a.atrasos + " atrasos · " + campeao.a.faltasLider + " faltas")}
+          <tr>
+            <td style="font-weight:600;color:var(--tinta)">Descontos</td>
+            <td style="color:var(--fraco)">${campeao.a.desconto ? "aplicados no mês" : "nenhum"}</td>
+            <td style="text-align:right;font-weight:700;color:#8A5200">${campeao.a.desconto ? "−" + campeao.a.desconto : "0"}</td>
+          </tr>
+        </table>
+        <div class="rodape">
+          Prêmio entregue na cerimônia mensal, na frente da equipe.
+          <span>Pontuação apurada pela Gestora.</span>
+        </div>
+      </div>
+
+      <div class="cartao naoimprime" style="padding:0;overflow:hidden;margin-top:18px">
+        <h2 style="padding:18px 18px 12px">Classificação completa</h2>
+        <table>
+          ${cls.map((x, i) => `<tr>
+            <td style="width:40px;color:#94A3B3;font-weight:600">${i + 1}</td>
+            <td><b style="color:var(--tinta)">${esc(x.pessoa.nome)}</b>
+                <span style="display:block;font-size:11px;color:#94A3B3">${CARGOS[x.pessoa.cargo].curto} — ${esc(x.pessoa.hub)}</span></td>
+            <td class="n">${x.a.pontos}</td>
+          </tr>`).join("")}
+        </table>
+      </div>`}`;
+
+  document.getElementById("selMesD").onchange = e => { mesEscolhido = e.target.value; telaDestaque(tela); };
+  document.getElementById("btImprimir").onclick = () => window.print();
+}
+
+const criterio = (rotulo, ok, valor) => `<tr>
+  <td style="font-weight:600;color:var(--tinta)">${rotulo}</td>
+  <td style="color:var(--fraco)">${valor}</td>
+  <td style="text-align:right;font-weight:700;color:${ok ? "var(--verde)" : "var(--vermelho)"}">${ok ? "25 pts" : "0"}</td>
+</tr>`;
+
+/* ===================================================================== */
+(async function iniciar() {
+  const liberado = await carregar();
+  if (!liberado) {
+    document.getElementById("tela").innerHTML =
+      `<p class="vazio">Acesso não liberado. Recarregue a página para tentar de novo.</p>`;
+    return;
+  }
+  if (dados.weeks.length) semanaAberta = dados.weeks[0].id;
+  desenhar();
+})();
+</script>
+</body>
+</html>
