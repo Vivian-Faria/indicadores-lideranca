@@ -80,23 +80,51 @@ no indicador da área, descontos.
 
 ## Pontuação
 
-Quatro blocos de 25 pontos. Ou bate a meta, ou não bate.
+Cada cargo tem sua própria lista de indicadores, editável na aba **Indicadores**.
+Cada indicador tem meta e peso.
 
-| Bloco | Meta |
-|---|---|
-| Ponto do time | 90% ou mais, média das semanas |
-| Cobertura de escala | até 2 faltas não cobertas, somadas no mês |
-| Indicador da área | Agiza 80% ou mais, ou chat em até 3 minutos |
-| Conduta própria | até 4 atrasos somados e nenhuma falta |
+Sugestão de fábrica, para os dois cargos:
 
-Descontos: troca de escala fora do processo −15, freela acima do limite −15,
-cada reembolso por pedido errado −5. Nunca fica negativo.
+| Indicador | Peso | Meta |
+|---|---|---|
+| Faltas não cobertas | 35 | até 2 no mês, somadas |
+| Ponto do time | 30 | 90% ou mais, média das semanas |
+| Indicador da área | 25 | Agiza 80% ou mais · chat 60% dos atendimentos dentro de 3 min |
+| Atrasos dele | 5 | até 4 no mês |
+| Faltas dele | 5 | nenhuma |
 
-Percentuais e tempos são média das semanas. Faltas, atrasos e reembolsos são
-soma. Semanas sem lançamento são ignoradas.
+O peso segue duas coisas: quanto a pessoa controla o número e quanto ele custa à
+operação. Cobrir a escala é a função, então pesa mais. Chegar no horário é a
+condição para trabalhar, não desempenho — e já zera o bônus por conta própria,
+então pesa pouco.
 
-**A pontuação não paga bônus.** O bônus segue os dois blocos de R$ 250 e os
-zeradores das fichas de cargo. Esta pontuação serve para ranquear e reconhecer.
+**Indicador sem dado no mês sai da conta.** Os 100 pontos se redistribuem entre
+os que sobraram. Quem acerta tudo faz 100, tendo cinco indicadores medidos ou
+dois. Quem não tem nenhum dado no mês não aparece na classificação.
+
+**Fatos de conduta não tiram pontos.** Troca de escala fora do processo, freela
+acima do limite e reembolso por pedido errado zeram o bônus, conforme as fichas
+de cargo, mas não mexem no placar. O ranking mede desempenho; o bônus mede
+conduta.
+
+**Rankings separados por cargo.** Varanda e Expedição têm listas de indicadores
+diferentes, então disputam separado, com um destaque do mês para cada.
+
+**A pontuação não paga bônus.** Ela serve para ranquear e reconhecer.
+
+---
+
+## Ligar e desligar indicadores
+
+Na aba **Indicadores** você edita nome, dica, forma de apuração, meta, unidade e
+peso de cada indicador, e pode criar ou excluir indicadores.
+
+A soma dos pesos não precisa dar 100 — o placar é proporcional ao que está em
+jogo.
+
+Na aba **Equipe**, cada pessoa tem a lista de indicadores do cargo com uma caixa
+de seleção. Desmarcar tira aquele indicador só daquela pessoa, sem apagar
+lançamento nenhum.
 
 ---
 
