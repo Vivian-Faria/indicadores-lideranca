@@ -205,18 +205,18 @@ const CORES = ["#1C7A4A", "#0F1B2B", "#B26A00", "#A8291A", "#3D6E8C", "#6B4E9E"]
    "restaurar sugestão". Depois disso vale o que estiver salvo. */
 const PADRAO = {
   varanda: [
-    { id: "faltas",  nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  peso: 35 },
-    { id: "ponto",   nome: "Ponto do time",       dica: "% de batidas corretas",   unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, peso: 30 },
-    { id: "area",    nome: "Nota Agiza",          dica: "boas práticas",           unidade: "%",    agregacao: "media", comparacao: "maior", meta: 80, peso: 25 },
-    { id: "atrasos", nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  peso: 5  },
-    { id: "faltasEle", nome: "Faltas dele",       dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  peso: 5  }
+    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana",   unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 2,  peso: 35, modo: "proporcional" },
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",        unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 90, peso: 30, modo: "binario" },
+    { id: "area",      nome: "Nota Agiza",          dica: "boas práticas",             unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 80, peso: 25, modo: "binario" },
+    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",         unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 4,  peso: 5,  modo: "proporcional" },
+    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",            unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 0,  peso: 5,  modo: "binario" }
   ],
   expedicao: [
-    { id: "faltas",  nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  peso: 35 },
-    { id: "ponto",   nome: "Ponto do time",       dica: "% de batidas corretas",   unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, peso: 30 },
-    { id: "area",    nome: "Chat dentro de 3 min", dica: "% dos atendimentos",     unidade: "%",    agregacao: "media", comparacao: "maior", meta: 60, peso: 25 },
-    { id: "atrasos", nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  peso: 5  },
-    { id: "faltasEle", nome: "Faltas dele",       dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  peso: 5  }
+    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana",   unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 2,  peso: 35, modo: "proporcional" },
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",        unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 90, peso: 30, modo: "binario" },
+    { id: "area",      nome: "Tempo médio no chat", dica: "minutos de espera na semana", unidade: " min", agregacao: "media", comparacao: "menor", meta: 3, peso: 25, modo: "binario" },
+    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",         unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 4,  peso: 5,  modo: "proporcional" },
+    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",            unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 0,  peso: 5,  modo: "binario" }
   ]
 };
 
@@ -247,6 +247,22 @@ function bate(ind, valor) {
   return ind.comparacao === "maior" ? valor >= ind.meta : valor <= ind.meta;
 }
 
+/* Quanto do peso a pessoa leva, de 0 a 1.
+   Binário: leva tudo ou nada.
+   Proporcional: leva conforme o quanto consumiu do limite, ou o quanto
+   alcançou do mínimo. Serve para separar quem zerou de quem ficou no limite. */
+function aproveitamento(ind, valor) {
+  if (valor === null) return null;
+  const meta = Number(ind.meta);
+  if (ind.modo !== "proporcional") return bate(ind, valor) ? 1 : 0;
+  if (ind.comparacao === "menor") {
+    if (meta <= 0) return valor <= 0 ? 1 : 0;
+    return Math.max(0, Math.min(1, 1 - valor / meta));
+  }
+  if (meta <= 0) return 1;
+  return Math.max(0, Math.min(1, valor / meta));
+}
+
 /* Apura um conjunto de semanas para uma pessoa */
 function apurar(linhas, pessoa) {
   const l = (linhas || []).filter(Boolean);
@@ -255,23 +271,23 @@ function apurar(linhas, pessoa) {
   const valor = ind => {
     const vs = l.map(r => numero(r[ind.id])).filter(v => v !== null);
     if (!vs.length) return null;
-    return ind.agregacao === "media"
-      ? vs.reduce((a, b) => a + b, 0) / vs.length
-      : vs.reduce((a, b) => a + b, 0);
+    if (ind.agregacao === "soma") return vs.reduce((a, b) => a + b, 0);
+    if (ind.agregacao === "ultimo") return vs[vs.length - 1];
+    return vs.reduce((a, b) => a + b, 0) / vs.length;
   };
 
   const detalhe = inds.map(ind => {
     const v = valor(ind);
-    return { ind, valor: v, bateu: bate(ind, v), medido: v !== null };
+    return { ind, valor: v, bateu: bate(ind, v), fatia: aproveitamento(ind, v), medido: v !== null };
   });
 
   const medidos = detalhe.filter(d => d.medido);
   const pesoTotal = medidos.reduce((a, d) => a + (Number(d.ind.peso) || 0), 0);
-  const pesoBatido = medidos.filter(d => d.bateu).reduce((a, d) => a + (Number(d.ind.peso) || 0), 0);
+  const pesoGanho = medidos.reduce((a, d) => a + (Number(d.ind.peso) || 0) * d.fatia, 0);
 
   /* Os 100 pontos se dividem entre os indicadores que têm dado.
      Quem acerta tudo faz 100, tendo cinco indicadores ou dois. */
-  const pontos = pesoTotal > 0 ? Math.round((pesoBatido / pesoTotal) * 100) : null;
+  const pontos = pesoTotal > 0 ? Math.round((pesoGanho / pesoTotal) * 100) : null;
 
   const marcas = {};
   zeradoresDe(pessoa.cargo).forEach(z => {
@@ -515,12 +531,17 @@ function telaIndicadores(tela) {
     <div class="cartao">
       <h2>Indicadores do ${CARGOS[cargoVisivel].rotulo}</h2>
       <p>O peso define quanto cada indicador vale no placar. Indicador sem dado no mês sai da conta e o peso dele se redistribui entre os demais.</p>
+      <p style="margin:-8px 0 14px;font-size:13px;color:var(--fraco)">
+        <b>Tudo ou nada</b> leva o peso cheio se bater a meta, zero se não bater.
+        <b>Proporcional</b> leva conforme o quanto foi consumido do limite — 2 atrasos de 4 permitidos levam metade do peso.
+        <b>Apuração</b> define como as semanas viram o número do mês: média, soma, ou o último lançamento.
+      </p>
       <div class="rolagem">
         <table>
           <thead><tr>
-            <th style="width:24%">Indicador</th><th style="width:20%">Dica no lançamento</th>
+            <th style="width:20%">Indicador</th><th style="width:16%">Dica no lançamento</th>
             <th style="width:12%">Apuração</th><th style="width:16%">Meta</th>
-            <th style="width:12%">Peso</th><th style="width:8%"></th>
+            <th style="width:14%">Pontuação</th><th style="width:10%">Peso</th><th style="width:8%"></th>
           </tr></thead>
           <tbody>
             ${lista.map((i, n) => `
@@ -531,6 +552,7 @@ function telaIndicadores(tela) {
                   <select data-cfg="${n}|agregacao">
                     <option value="media" ${i.agregacao === "media" ? "selected" : ""}>Média</option>
                     <option value="soma" ${i.agregacao === "soma" ? "selected" : ""}>Soma</option>
+                    <option value="ultimo" ${i.agregacao === "ultimo" ? "selected" : ""}>Último</option>
                   </select>
                 </td>
                 <td><div class="linha" style="gap:5px;flex-wrap:nowrap">
@@ -541,6 +563,12 @@ function telaIndicadores(tela) {
                   <input type="number" step="any" data-cfg="${n}|meta" value="${i.meta}" style="width:70px">
                   <input type="text" data-cfg="${n}|unidade" value="${esc(i.unidade || "")}" placeholder="un" style="width:48px">
                 </div></td>
+                <td>
+                  <select data-cfg="${n}|modo">
+                    <option value="binario" ${i.modo !== "proporcional" ? "selected" : ""}>Tudo ou nada</option>
+                    <option value="proporcional" ${i.modo === "proporcional" ? "selected" : ""}>Proporcional</option>
+                  </select>
+                </td>
                 <td><input type="number" min="0" data-cfg="${n}|peso" value="${i.peso}" style="width:70px"></td>
                 <td><button class="mini" data-del="${n}">Excluir</button></td>
               </tr>`).join("")}
@@ -580,7 +608,7 @@ function telaIndicadores(tela) {
     telaIndicadores(tela);
   });
   document.getElementById("btNovoInd").onclick = async () => {
-    lst.push({ id: "i" + Date.now(), nome: "Novo indicador", dica: "", unidade: "", agregacao: "media", comparacao: "maior", meta: 0, peso: 10 });
+    lst.push({ id: "i" + Date.now(), nome: "Novo indicador", dica: "", unidade: "", agregacao: "media", comparacao: "maior", meta: 0, peso: 10, modo: "binario" });
     dados.config[cargoVisivel] = lst;
     await salvar("Indicador criado.");
     telaIndicadores(tela);
@@ -775,8 +803,10 @@ function telaDesempenho(tela) {
                   const d = a.detalhe.find(x => x.ind.id === i.id);
                   if (!d) return `<td style="color:#B0BCC9">fora</td>`;
                   if (!d.medido) return `<td style="color:#B0BCC9">sem dado</td>`;
-                  const v = d.ind.agregacao === "media" ? d.valor.toFixed(1) : d.valor;
-                  return `<td><span class="${d.bateu ? "ok" : "nao"}">${d.bateu ? "✓" : "✕"}</span> ${v}${d.ind.unidade}</td>`;
+                  const v = d.ind.agregacao === "soma" ? d.valor : d.valor.toFixed(1);
+                  const fatia = d.ind.modo === "proporcional"
+                    ? `<span style="display:block;font-size:11px;color:#94A3B3">${Math.round(d.fatia * 100)}% do peso</span>` : "";
+                  return `<td><span class="${d.bateu ? "ok" : "nao"}">${d.bateu ? "✓" : "✕"}</span> ${v}${d.ind.unidade}${fatia}</td>`;
                 }).join("")}
                 <td class="n">${a.pontos}</td>
               </tr>`).join("")}
@@ -869,8 +899,8 @@ function telaDestaque(tela) {
         <table>
           ${campeao.a.detalhe.filter(d => d.medido).map(d => `<tr>
             <td style="font-weight:600;color:var(--tinta)">${esc(d.ind.nome)}</td>
-            <td style="color:var(--fraco)">${d.ind.agregacao === "media" ? d.valor.toFixed(1) : d.valor}${d.ind.unidade}</td>
-            <td style="text-align:right;font-weight:700;color:${d.bateu ? "var(--verde)" : "var(--vermelho)"}">${d.bateu ? "peso " + d.ind.peso : "0"}</td>
+            <td style="color:var(--fraco)">${d.ind.agregacao === "soma" ? d.valor : d.valor.toFixed(1)}${d.ind.unidade}</td>
+            <td style="text-align:right;font-weight:700;color:${d.fatia >= 1 ? "var(--verde)" : (d.fatia > 0 ? "var(--ambar)" : "var(--vermelho)")}">${Math.round(d.fatia * d.ind.peso)} de ${d.ind.peso}</td>
           </tr>`).join("")}
         </table>
         <div class="rodape">Prêmio entregue na cerimônia mensal, na frente da equipe.

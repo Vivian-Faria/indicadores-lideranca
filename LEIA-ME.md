@@ -80,35 +80,35 @@ no indicador da área, descontos.
 
 ## Pontuação
 
-Cada cargo tem sua própria lista de indicadores, editável na aba **Indicadores**.
-Cada indicador tem meta e peso.
+Cada cargo tem sua lista de indicadores, editável na aba **Indicadores**.
 
-Sugestão de fábrica, para os dois cargos:
+| Indicador | Peso | Meta | Apuração | Pontuação |
+|---|---|---|---|---|
+| Faltas não cobertas | 35 | até 2 no mês | soma das semanas | proporcional |
+| Escala preenchida | 30 | 90% ou mais | média das semanas | tudo ou nada |
+| Indicador da área | 25 | Agiza ≥ 80% · chat ≤ 3 min | média das semanas | tudo ou nada |
+| Atrasos dele | 5 | até 4 no mês | soma das semanas | proporcional |
+| Faltas dele | 5 | nenhuma | soma das semanas | tudo ou nada |
 
-| Indicador | Peso | Meta |
-|---|---|---|
-| Faltas não cobertas | 35 | até 2 no mês, somadas |
-| Ponto do time | 30 | 90% ou mais, média das semanas |
-| Indicador da área | 25 | Agiza 80% ou mais · chat 60% dos atendimentos dentro de 3 min |
-| Atrasos dele | 5 | até 4 no mês |
-| Faltas dele | 5 | nenhuma |
+**Tudo ou nada** leva o peso cheio se bater a meta, zero se não bater.
 
-O peso segue duas coisas: quanto a pessoa controla o número e quanto ele custa à
-operação. Cobrir a escala é a função, então pesa mais. Chegar no horário é a
-condição para trabalhar, não desempenho — e já zera o bônus por conta própria,
-então pesa pouco.
+**Proporcional** leva conforme o quanto foi consumido do limite. Com limite de 4
+atrasos: nenhum atraso leva o peso cheio, 1 leva 75%, 2 leva metade, 3 leva 25%,
+4 leva zero. Serve para separar quem zerou de quem ficou no limite — os dois
+estão dentro da regra, mas não entregaram a mesma coisa.
+
+**Apuração** define como as semanas viram o número do mês. *Soma* para contagens,
+*média* para percentuais e tempos, *último* quando o app já mostra o acumulado e
+só o valor mais recente importa.
 
 **Indicador sem dado no mês sai da conta.** Os 100 pontos se redistribuem entre
-os que sobraram. Quem acerta tudo faz 100, tendo cinco indicadores medidos ou
-dois. Quem não tem nenhum dado no mês não aparece na classificação.
+os que sobraram. Quem não tem nenhum dado não aparece na classificação.
 
-**Fatos de conduta não tiram pontos.** Troca de escala fora do processo, freela
-acima do limite e reembolso por pedido errado zeram o bônus, conforme as fichas
-de cargo, mas não mexem no placar. O ranking mede desempenho; o bônus mede
-conduta.
+**Conduta não tira pontos.** Troca de escala fora do processo, freela acima do
+limite e reembolso por pedido errado zeram o bônus, conforme as fichas de cargo,
+mas não mexem no placar. O ranking mede desempenho; o bônus mede conduta.
 
-**Rankings separados por cargo.** Varanda e Expedição têm listas de indicadores
-diferentes, então disputam separado, com um destaque do mês para cada.
+**Rankings separados por cargo**, cada um com seu destaque do mês.
 
 **A pontuação não paga bônus.** Ela serve para ranquear e reconhecer.
 
@@ -116,15 +116,12 @@ diferentes, então disputam separado, com um destaque do mês para cada.
 
 ## Ligar e desligar indicadores
 
-Na aba **Indicadores** você edita nome, dica, forma de apuração, meta, unidade e
-peso de cada indicador, e pode criar ou excluir indicadores.
+Na aba **Indicadores** você edita nome, dica, apuração, meta, unidade, modo de
+pontuação e peso, e pode criar ou excluir indicadores. A soma dos pesos não
+precisa dar 100 — o placar é proporcional ao que está em jogo.
 
-A soma dos pesos não precisa dar 100 — o placar é proporcional ao que está em
-jogo.
-
-Na aba **Equipe**, cada pessoa tem a lista de indicadores do cargo com uma caixa
-de seleção. Desmarcar tira aquele indicador só daquela pessoa, sem apagar
-lançamento nenhum.
+Na aba **Equipe**, cada pessoa tem a lista do cargo com caixas de seleção.
+Desmarcar tira aquele indicador só daquela pessoa.
 
 ---
 
