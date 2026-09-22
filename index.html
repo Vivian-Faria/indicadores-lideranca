@@ -208,13 +208,13 @@ const PADRAO = {
     { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  valor: 125, modo: "limite" },
     { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  valor: 125, modo: "limite" },
     { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  valor: 125, modo: "limite" },
-    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",      unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, valor: 125, modo: "alvo" }
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% acumulado que o app mostra", unidade: "%", agregacao: "ultimo", comparacao: "maior", meta: 90, valor: 125, modo: "alvo" }
   ],
   expedicao: [
     { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  valor: 100, modo: "limite" },
     { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  valor: 100, modo: "limite" },
     { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  valor: 100, modo: "limite" },
-    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",      unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, valor: 100, modo: "alvo" },
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% acumulado que o app mostra", unidade: "%", agregacao: "ultimo", comparacao: "maior", meta: 90, valor: 100, modo: "alvo" },
     { id: "area",      nome: "Tempo de atendimento", dica: "minutos de espera na semana", unidade: " min", agregacao: "media", comparacao: "menor", meta: 3, valor: 100, modo: "alvo" }
   ]
 };
@@ -596,7 +596,8 @@ function telaIndicadores(tela) {
       <p style="margin:-8px 0 14px;font-size:13px;color:var(--fraco)">
         <b>Limite</b> — a meta é o teto tolerado. Com limite de 4 atrasos, 1 atraso paga 75% e 4 atrasos pagam zero.<br>
         <b>Alvo</b> — a meta é o que se quer atingir. Quanto maior melhor paga o que alcançou da meta; quanto menor melhor zera no dobro da meta.<br>
-        <b>Tudo ou nada</b> — paga o valor cheio se bater, zero se não bater.
+        <b>Tudo ou nada</b> — paga o valor cheio se bater, zero se não bater.<br>
+        Em <b>Apuração</b>, use <b>Último</b> quando o número já vem acumulado no mês, como a escala preenchida: vale o lançamento mais recente, não a média das semanas.
       </p>
       <div class="rolagem">
         <table>

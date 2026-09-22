@@ -90,7 +90,7 @@ ao quanto foi atingido. Não existe mais tudo ou nada.
 | Faltas dele | nenhuma | 1 falta zera este indicador |
 | Atrasos dele | até 4 no mês | 1 atraso paga R$ 93,75 · 2 pagam R$ 62,50 · 4 pagam zero |
 | Faltas não cobertas | até 2 no mês | 1 falta paga R$ 62,50 · 2 pagam zero |
-| Escala preenchida | 90% | paga o que alcançou da meta |
+| Escala preenchida | 90% | paga o que alcançou da meta · vale o acumulado mais recente |
 
 **Líder de Expedição — 5 indicadores de R$ 100**
 
@@ -123,6 +123,11 @@ margem. Serve para faltas e atrasos.
 alcançou da meta. Quanto menor melhor paga integral na meta e zera no dobro dela.
 
 **Tudo ou nada** — paga o valor cheio se bater, zero se não bater.
+
+**Apuração** define como as semanas viram o número do mês. *Soma* para contagens,
+como faltas e atrasos. *Média* para tempos, como o chat. *Último* para números
+que já vêm acumulados, como a escala preenchida: se o líder fechou 30% na
+primeira semana e 100% na segunda, vale 100%, não a média das duas.
 
 ---
 
