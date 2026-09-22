@@ -426,6 +426,10 @@ async function salvar(msg) {
 
 const meses = () => [...new Set(dados.weeks.map(w => w.mes))].sort().reverse();
 
+/* Semanas de um mês, da mais antiga para a mais recente */
+const semanasDoMes = mes => dados.weeks.filter(w => w.mes === mes)
+  .slice().sort((a, b) => a.id < b.id ? -1 : (a.id > b.id ? 1 : 0));
+
 /* =====================================================================
    Navegação
 ===================================================================== */
@@ -853,7 +857,9 @@ async function apagarSemana(semana) {
    4. DESEMPENHO — um ranking por cargo
 ===================================================================== */
 function classificacao(mes, cargo) {
-  const semanas = dados.weeks.filter(w => w.mes === mes);
+  /* Em ordem crescente: a apuração "Último" precisa da semana mais
+     recente no fim da lista, e dados.weeks guarda ao contrário. */
+  const semanas = semanasDoMes(mes);
   return dados.people.filter(p => p.cargo === cargo).map(p => {
     const linhas = semanas.map(w => (dados.records[w.id] || {})[p.id]).filter(Boolean);
     const a = apurar(linhas, p);
@@ -870,7 +876,7 @@ function telaDesempenho(tela) {
   if (!ms.length) { tela.innerHTML = `<p class="vazio">Lance ao menos uma semana para ver o desempenho.</p>`; return; }
   if (!mesEscolhido || ms.indexOf(mesEscolhido) < 0) mesEscolhido = ms[0];
 
-  const semanas = dados.weeks.filter(w => w.mes === mesEscolhido).sort((a, b) => a.id < b.id ? -1 : 1);
+  const semanas = semanasDoMes(mesEscolhido);
   const pessoas = dados.people.filter(p => p.cargo === cargoVisivel);
   const cls = classificacao(mesEscolhido, cargoVisivel);
 
