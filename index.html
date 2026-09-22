@@ -205,41 +205,64 @@ const CORES = ["#1C7A4A", "#0F1B2B", "#B26A00", "#A8291A", "#3D6E8C", "#6B4E9E"]
    "restaurar sugestão". Depois disso vale o que estiver salvo. */
 const PADRAO = {
   varanda: [
-    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana",   unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 2,  peso: 35, modo: "proporcional" },
-    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",        unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 90, peso: 30, modo: "binario" },
-    { id: "area",      nome: "Nota Agiza",          dica: "boas práticas",             unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 80, peso: 25, modo: "binario" },
-    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",         unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 4,  peso: 5,  modo: "proporcional" },
-    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",            unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 0,  peso: 5,  modo: "binario" }
+    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  valor: 125, modo: "limite" },
+    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  valor: 125, modo: "limite" },
+    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  valor: 125, modo: "limite" },
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",      unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, valor: 125, modo: "alvo" }
   ],
   expedicao: [
-    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana",   unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 2,  peso: 35, modo: "proporcional" },
-    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",        unidade: "%",    agregacao: "media",  comparacao: "maior", meta: 90, peso: 30, modo: "binario" },
-    { id: "area",      nome: "Tempo médio no chat", dica: "minutos de espera na semana", unidade: " min", agregacao: "media", comparacao: "menor", meta: 3, peso: 25, modo: "binario" },
-    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",         unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 4,  peso: 5,  modo: "proporcional" },
-    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",            unidade: "",     agregacao: "soma",   comparacao: "menor", meta: 0,  peso: 5,  modo: "binario" }
+    { id: "faltasEle", nome: "Faltas dele",         dica: "nenhuma no mês",          unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 0,  valor: 100, modo: "limite" },
+    { id: "atrasos",   nome: "Atrasos dele",        dica: "de até 15 minutos",       unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 4,  valor: 100, modo: "limite" },
+    { id: "faltas",    nome: "Faltas não cobertas", dica: "postos vazios na semana", unidade: "",     agregacao: "soma",  comparacao: "menor", meta: 2,  valor: 100, modo: "limite" },
+    { id: "ponto",     nome: "Escala preenchida",   dica: "% que o app mostra",      unidade: "%",    agregacao: "media", comparacao: "maior", meta: 90, valor: 100, modo: "alvo" },
+    { id: "area",      nome: "Tempo de atendimento", dica: "minutos de espera na semana", unidade: " min", agregacao: "media", comparacao: "menor", meta: 3, valor: 100, modo: "alvo" }
   ]
 };
 
-/* Fatos que não pontuam: zeram o bônus, conforme as fichas de cargo */
+/* Cada fato de conduta zera um indicador específico, não o bônus inteiro */
 const ZERADORES = [
-  { id: "trocaIrregular",  nome: "Troca de escala fora do processo", cargos: ["varanda", "expedicao"] },
-  { id: "freelaExcedente", nome: "Freela acima do limite da escala", cargos: ["varanda", "expedicao"] },
-  { id: "reembolsos",      nome: "Reembolso por pedido errado",      cargos: ["expedicao"], contagem: true }
+  { id: "trocaIrregular",  nome: "Troca de escala fora do processo", cargos: ["varanda", "expedicao"], padrao: "ponto" },
+  { id: "freelaExcedente", nome: "Freela acima do limite da escala", cargos: ["varanda", "expedicao"], padrao: "faltas" },
+  { id: "reembolsos",      nome: "Reembolso por pedido errado",      cargos: ["expedicao"], padrao: "area", contagem: true }
 ];
+
+const dinheiro = v => "R$ " + (Math.round(v * 100) / 100).toFixed(2).replace(".", ",");
 
 const numero = v => (v === "" || v === null || v === undefined || isNaN(Number(v))) ? null : Number(v);
 const clone = o => JSON.parse(JSON.stringify(o));
 
+const TETO_PADRAO = 500;
+
+function tetoDe(cargo) {
+  const t = dados.teto && dados.teto[cargo];
+  return (t === undefined || t === null || isNaN(Number(t))) ? TETO_PADRAO : Number(t);
+}
+
+/* Lista crua, como está salva. É o que a aba Indicadores edita. */
 function indicadoresDe(cargo) {
   return (dados.config && dados.config[cargo]) ? dados.config[cargo] : PADRAO[cargo];
 }
+
+/* Lista com os valores ajustados ao teto do cargo.
+   Qualquer que seja a soma configurada, o cenário perfeito paga
+   exatamente o teto — nunca mais que isso. */
+function indicadoresPagos(cargo) {
+  const lista = indicadoresDe(cargo);
+  const soma = lista.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+  const teto = tetoDe(cargo);
+  if (soma <= 0) return lista.map(i => Object.assign({}, i, { valor: 0 }));
+  const fator = teto / soma;
+  return lista.map(i => Object.assign({}, i, { valor: (Number(i.valor) || 0) * fator }));
+}
 function zeradoresDe(cargo) {
-  return ZERADORES.filter(z => z.cargos.indexOf(cargo) >= 0);
+  const mapa = (dados.zeradores && dados.zeradores[cargo]) || {};
+  return ZERADORES.filter(z => z.cargos.indexOf(cargo) >= 0)
+    .map(z => Object.assign({}, z, { alvo: mapa[z.id] !== undefined ? mapa[z.id] : z.padrao }));
 }
 /* Uma pessoa pode ter indicadores desligados individualmente */
 function indicadoresDaPessoa(p) {
   const fora = p.semIndicador || [];
-  return indicadoresDe(p.cargo).filter(i => fora.indexOf(i.id) < 0);
+  return indicadoresPagos(p.cargo).filter(i => fora.indexOf(i.id) < 0);
 }
 
 function bate(ind, valor) {
@@ -247,20 +270,28 @@ function bate(ind, valor) {
   return ind.comparacao === "maior" ? valor >= ind.meta : valor <= ind.meta;
 }
 
-/* Quanto do peso a pessoa leva, de 0 a 1.
-   Binário: leva tudo ou nada.
-   Proporcional: leva conforme o quanto consumiu do limite, ou o quanto
-   alcançou do mínimo. Serve para separar quem zerou de quem ficou no limite. */
+/* Quanto do valor a pessoa leva, de 0 a 1.
+
+   binário  leva tudo ou nada
+   limite   a meta é o teto tolerado: 1 - valor/limite
+            com limite 4 atrasos, 1 atraso paga 75% e 4 atrasos pagam zero
+   alvo     a meta é o que se quer atingir
+            maior é melhor: valor/meta, como a escala preenchida
+            menor é melhor: 2 - valor/meta, então o dobro da meta paga zero */
 function aproveitamento(ind, valor) {
   if (valor === null) return null;
   const meta = Number(ind.meta);
-  if (ind.modo !== "proporcional") return bate(ind, valor) ? 1 : 0;
-  if (ind.comparacao === "menor") {
+  const trava = x => Math.max(0, Math.min(1, x));
+
+  if (ind.modo === "limite") {
     if (meta <= 0) return valor <= 0 ? 1 : 0;
-    return Math.max(0, Math.min(1, 1 - valor / meta));
+    return trava(1 - valor / meta);
   }
-  if (meta <= 0) return 1;
-  return Math.max(0, Math.min(1, valor / meta));
+  if (ind.modo === "alvo") {
+    if (meta <= 0) return valor <= 0 ? 1 : 0;
+    return ind.comparacao === "maior" ? trava(valor / meta) : trava(2 - valor / meta);
+  }
+  return bate(ind, valor) ? 1 : 0;
 }
 
 /* Apura um conjunto de semanas para uma pessoa */
@@ -276,28 +307,43 @@ function apurar(linhas, pessoa) {
     return vs.reduce((a, b) => a + b, 0) / vs.length;
   };
 
-  const detalhe = inds.map(ind => {
-    const v = valor(ind);
-    return { ind, valor: v, bateu: bate(ind, v), fatia: aproveitamento(ind, v), medido: v !== null };
-  });
-
-  const medidos = detalhe.filter(d => d.medido);
-  const pesoTotal = medidos.reduce((a, d) => a + (Number(d.ind.peso) || 0), 0);
-  const pesoGanho = medidos.reduce((a, d) => a + (Number(d.ind.peso) || 0) * d.fatia, 0);
-
-  /* Os 100 pontos se dividem entre os indicadores que têm dado.
-     Quem acerta tudo faz 100, tendo cinco indicadores ou dois. */
-  const pontos = pesoTotal > 0 ? Math.round((pesoGanho / pesoTotal) * 100) : null;
-
+  /* Um zerador derruba só o indicador ao qual está ligado */
+  const zs = zeradoresDe(pessoa.cargo);
   const marcas = {};
-  zeradoresDe(pessoa.cargo).forEach(z => {
+  zs.forEach(z => {
     marcas[z.id] = z.contagem
       ? l.reduce((a, r) => a + (numero(r[z.id]) ?? 0), 0)
       : l.some(r => r[z.id]);
   });
-  const temZerador = zeradoresDe(pessoa.cargo).some(z => z.contagem ? marcas[z.id] > 0 : marcas[z.id]);
+  const zerado = {};
+  zs.forEach(z => {
+    const ativo = z.contagem ? marcas[z.id] > 0 : marcas[z.id];
+    if (ativo && z.alvo) (zerado[z.alvo] = zerado[z.alvo] || []).push(z.nome);
+  });
 
-  return { detalhe, medidos: medidos.length, total: detalhe.length, pontos, marcas, temZerador, semanas: l.length };
+  const detalhe = inds.map(ind => {
+    const v = valor(ind);
+    const bruto = aproveitamento(ind, v);
+    const cortes = zerado[ind.id] || [];
+    const fatia = (bruto === null) ? null : (cortes.length ? 0 : bruto);
+    return {
+      ind, valor: v, bateu: bate(ind, v), bruto, fatia, cortes,
+      medido: v !== null,
+      ganho: (fatia === null) ? 0 : (Number(ind.valor) || 0) * fatia
+    };
+  });
+
+  const medidos = detalhe.filter(d => d.medido);
+  const disponivel = medidos.reduce((a, d) => a + (Number(d.ind.valor) || 0), 0);
+  const ganho = medidos.reduce((a, d) => a + d.ganho, 0);
+  const previsto = inds.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+
+  /* A nota é o quanto do dinheiro disponível foi conquistado */
+  const pontos = disponivel > 0 ? Math.round((ganho / disponivel) * 100) : null;
+  const temZerador = Object.keys(zerado).length > 0;
+
+  return { detalhe, medidos: medidos.length, total: detalhe.length, pontos,
+           ganho, disponivel, previsto, marcas, zerado, temZerador, semanas: l.length };
 }
 
 /* ---------- semanas: segunda a domingo, mês do domingo ---------- */
@@ -315,7 +361,7 @@ const mesPorExtenso = m => { if (!m) return ""; const [a, mm] = m.split("-"); re
 /* =====================================================================
    Estado
 ===================================================================== */
-let dados = { people: [], weeks: [], records: {}, config: null };
+let dados = { people: [], weeks: [], records: {}, config: null, zeradores: null, teto: null };
 let aba = "equipe";
 let mesEscolhido = null;
 let semanaAberta = null;
@@ -350,8 +396,11 @@ async function carregar() {
       }
       if (!r.ok) throw new Error();
       const d = await r.json();
-      dados = { people: d.people || [], weeks: d.weeks || [], records: d.records || {}, config: d.config || null };
+      dados = { people: d.people || [], weeks: d.weeks || [], records: d.records || {},
+                config: d.config || null, zeradores: d.zeradores || null, teto: d.teto || null };
       if (!dados.config) dados.config = clone(PADRAO);
+      if (!dados.zeradores) dados.zeradores = { varanda: {}, expedicao: {} };
+      if (!dados.teto) dados.teto = { varanda: TETO_PADRAO, expedicao: TETO_PADRAO };
       return true;
     } catch (e) {
       recado("Não foi possível ler os dados. Verifique sua conexão.", true);
@@ -524,24 +573,38 @@ async function removerPessoa(id) {
 ===================================================================== */
 function telaIndicadores(tela) {
   const lista = indicadoresDe(cargoVisivel);
-  const soma = lista.reduce((a, i) => a + (Number(i.peso) || 0), 0);
+  const pagos = indicadoresPagos(cargoVisivel);
+  const total = lista.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+  const teto = tetoDe(cargoVisivel);
+  const desajustado = Math.abs(total - teto) > 0.01;
+  const zs = zeradoresDe(cargoVisivel);
 
   tela.innerHTML = `
     ${seletorCargo()}
     <div class="cartao">
       <h2>Indicadores do ${CARGOS[cargoVisivel].rotulo}</h2>
-      <p>O peso define quanto cada indicador vale no placar. Indicador sem dado no mês sai da conta e o peso dele se redistribui entre os demais.</p>
+      <p>Cada indicador vale um valor em reais. O pagamento é proporcional ao atingimento da meta.</p>
+      <div class="linha" style="background:#F4F6F8;border-radius:6px;padding:12px 14px;margin-bottom:14px">
+        <span style="font-size:14px">Bônus total deste cargo, no mês perfeito</span>
+        <span class="linha" style="gap:6px"><span style="color:var(--fraco)">R$</span>
+          <input type="number" step="any" min="0" id="cfgTeto" value="${teto}" style="width:96px"></span>
+        <span class="empurra" style="font-size:13px;color:var(--fraco)">
+          O cenário 100% positivo paga exatamente este valor. Os valores abaixo são
+          ajustados automaticamente para caber nele.
+        </span>
+      </div>
       <p style="margin:-8px 0 14px;font-size:13px;color:var(--fraco)">
-        <b>Tudo ou nada</b> leva o peso cheio se bater a meta, zero se não bater.
-        <b>Proporcional</b> leva conforme o quanto foi consumido do limite — 2 atrasos de 4 permitidos levam metade do peso.
-        <b>Apuração</b> define como as semanas viram o número do mês: média, soma, ou o último lançamento.
+        <b>Limite</b> — a meta é o teto tolerado. Com limite de 4 atrasos, 1 atraso paga 75% e 4 atrasos pagam zero.<br>
+        <b>Alvo</b> — a meta é o que se quer atingir. Quanto maior melhor paga o que alcançou da meta; quanto menor melhor zera no dobro da meta.<br>
+        <b>Tudo ou nada</b> — paga o valor cheio se bater, zero se não bater.
       </p>
       <div class="rolagem">
         <table>
           <thead><tr>
-            <th style="width:20%">Indicador</th><th style="width:16%">Dica no lançamento</th>
-            <th style="width:12%">Apuração</th><th style="width:16%">Meta</th>
-            <th style="width:14%">Pontuação</th><th style="width:10%">Peso</th><th style="width:8%"></th>
+            <th style="width:19%">Indicador</th><th style="width:15%">Dica no lançamento</th>
+            <th style="width:11%">Apuração</th><th style="width:17%">Meta</th>
+            <th style="width:12%">Pagamento</th><th style="width:11%">Valor</th>
+            <th style="width:10%">Paga</th><th style="width:8%"></th>
           </tr></thead>
           <tbody>
             ${lista.map((i, n) => `
@@ -556,20 +619,25 @@ function telaIndicadores(tela) {
                   </select>
                 </td>
                 <td><div class="linha" style="gap:5px;flex-wrap:nowrap">
-                  <select data-cfg="${n}|comparacao" style="width:64px">
+                  <select data-cfg="${n}|comparacao" style="width:62px">
                     <option value="maior" ${i.comparacao === "maior" ? "selected" : ""}>≥</option>
                     <option value="menor" ${i.comparacao === "menor" ? "selected" : ""}>≤</option>
                   </select>
-                  <input type="number" step="any" data-cfg="${n}|meta" value="${i.meta}" style="width:70px">
-                  <input type="text" data-cfg="${n}|unidade" value="${esc(i.unidade || "")}" placeholder="un" style="width:48px">
+                  <input type="number" step="any" data-cfg="${n}|meta" value="${i.meta}" style="width:66px">
+                  <input type="text" data-cfg="${n}|unidade" value="${esc(i.unidade || "")}" placeholder="un" style="width:46px">
                 </div></td>
                 <td>
                   <select data-cfg="${n}|modo">
-                    <option value="binario" ${i.modo !== "proporcional" ? "selected" : ""}>Tudo ou nada</option>
-                    <option value="proporcional" ${i.modo === "proporcional" ? "selected" : ""}>Proporcional</option>
+                    <option value="limite" ${i.modo === "limite" ? "selected" : ""}>Limite</option>
+                    <option value="alvo" ${i.modo === "alvo" ? "selected" : ""}>Alvo</option>
+                    <option value="binario" ${i.modo === "binario" ? "selected" : ""}>Tudo ou nada</option>
                   </select>
                 </td>
-                <td><input type="number" min="0" data-cfg="${n}|peso" value="${i.peso}" style="width:70px"></td>
+                <td><div class="linha" style="gap:4px;flex-wrap:nowrap">
+                  <span style="color:var(--fraco)">R$</span>
+                  <input type="number" step="any" min="0" data-cfg="${n}|valor" value="${i.valor}" style="width:70px">
+                </div></td>
+                <td style="font-weight:700;color:var(--tinta)">${dinheiro(pagos[n].valor)}</td>
                 <td><button class="mini" data-del="${n}">Excluir</button></td>
               </tr>`).join("")}
           </tbody>
@@ -578,19 +646,33 @@ function telaIndicadores(tela) {
       <div class="linha" style="margin-top:14px">
         <button class="acao vazio" id="btNovoInd">Novo indicador</button>
         <button class="acao vazio" id="btPadrao">Restaurar sugestão</button>
-        <span class="empurra" style="font-size:14px;color:${soma === 100 ? "var(--fraco)" : "var(--ambar)"}">
-          Soma dos pesos: <b>${soma}</b>${soma === 100 ? "" : " — não precisa dar 100, o placar é proporcional"}
+        ${desajustado ? `<button class="acao vazio" id="btAjustar">Igualar os valores ao teto</button>` : ""}
+        <span class="empurra" style="font-size:14px;color:${desajustado ? "var(--ambar)" : "var(--fraco)"}">
+          Soma configurada: <b>${dinheiro(total)}</b>${desajustado
+            ? ` — diferente do teto, mas o painel paga no máximo ${dinheiro(teto)}`
+            : ""}
         </span>
         <button class="acao verde" id="btSalvarInd">Salvar indicadores</button>
       </div>
     </div>
 
     <div class="cartao">
-      <h2>Fatos que não pontuam</h2>
-      <p>Estes continuam sendo registrados no lançamento, mas não tiram pontos do placar. Eles zeram o bônus, conforme as fichas de cargo.</p>
-      <table>
-        ${zeradoresDe(cargoVisivel).map(z => `<tr><td>${z.nome}</td><td style="text-align:right;color:var(--vermelho);font-weight:600">zera o bônus</td></tr>`).join("")}
-      </table>
+      <h2>Conduta</h2>
+      <p>Estes fatos não tiram dinheiro do bônus inteiro. Cada um zera apenas o indicador ligado a ele.</p>
+      <div class="rolagem">
+        <table>
+          <thead><tr><th style="width:55%">Aconteceu</th><th>Zera este indicador</th></tr></thead>
+          <tbody>
+            ${zs.map(z => `<tr>
+              <td>${z.nome}</td>
+              <td><select data-zer="${z.id}">
+                <option value="">não zera nada</option>
+                ${lista.map(i => `<option value="${i.id}" ${z.alvo === i.id ? "selected" : ""}>${esc(i.nome)}</option>`).join("")}
+              </select></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
     </div>`;
 
   ligarSeletorCargo(tela, telaIndicadores);
@@ -598,7 +680,12 @@ function telaIndicadores(tela) {
   const lst = clone(lista);
   tela.querySelectorAll("[data-cfg]").forEach(el => el.oninput = () => {
     const [n, campo] = el.dataset.cfg.split("|");
-    lst[n][campo] = (campo === "meta" || campo === "peso") ? Number(el.value) : el.value;
+    lst[n][campo] = (campo === "meta" || campo === "valor") ? Number(el.value) : el.value;
+  });
+  tela.querySelectorAll("[data-zer]").forEach(el => el.onchange = async () => {
+    dados.zeradores[cargoVisivel] = dados.zeradores[cargoVisivel] || {};
+    dados.zeradores[cargoVisivel][el.dataset.zer] = el.value;
+    await salvar("Conduta atualizada.");
   });
   tela.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
     if (!confirm("Excluir o indicador \"" + lst[b.dataset.del].nome + "\"? Os lançamentos já feitos continuam guardados.")) return;
@@ -607,15 +694,33 @@ function telaIndicadores(tela) {
     await salvar("Indicador excluído.");
     telaIndicadores(tela);
   });
+  document.getElementById("cfgTeto").onchange = async e => {
+    dados.teto = dados.teto || {};
+    dados.teto[cargoVisivel] = Number(e.target.value) || 0;
+    await salvar("Bônus total ajustado.");
+    telaIndicadores(tela);
+  };
+  const btAj = document.getElementById("btAjustar");
+  if (btAj) btAj.onclick = async () => {
+    const soma = lst.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+    if (soma <= 0) return;
+    const fator = tetoDe(cargoVisivel) / soma;
+    lst.forEach(i => { i.valor = Math.round((Number(i.valor) || 0) * fator * 100) / 100; });
+    dados.config[cargoVisivel] = lst;
+    await salvar("Valores igualados ao teto.");
+    telaIndicadores(tela);
+  };
   document.getElementById("btNovoInd").onclick = async () => {
-    lst.push({ id: "i" + Date.now(), nome: "Novo indicador", dica: "", unidade: "", agregacao: "media", comparacao: "maior", meta: 0, peso: 10, modo: "binario" });
+    lst.push({ id: "i" + Date.now(), nome: "Novo indicador", dica: "", unidade: "", agregacao: "media", comparacao: "maior", meta: 100, valor: 0, modo: "alvo" });
     dados.config[cargoVisivel] = lst;
     await salvar("Indicador criado.");
     telaIndicadores(tela);
   };
   document.getElementById("btPadrao").onclick = async () => {
-    if (!confirm("Restaurar a sugestão de indicadores e pesos deste cargo?")) return;
+    if (!confirm("Restaurar a sugestão de indicadores e valores deste cargo?")) return;
     dados.config[cargoVisivel] = clone(PADRAO[cargoVisivel]);
+    dados.zeradores[cargoVisivel] = {};
+    dados.teto[cargoVisivel] = TETO_PADRAO;
     await salvar("Sugestão restaurada.");
     telaIndicadores(tela);
   };
@@ -658,6 +763,12 @@ function telaApuracao(tela) {
   desenharLancamento();
 }
 
+function rotuloZera(cargo, z) {
+  if (!z.alvo) return "não zera nada";
+  const i = indicadoresDe(cargo).find(x => x.id === z.alvo);
+  return i ? "zera " + i.nome.toLowerCase() : "não zera nada";
+}
+
 function desenharLancamento() {
   const alvo = document.getElementById("areaLancamento");
   const semana = dados.weeks.find(w => w.id === semanaAberta);
@@ -698,9 +809,10 @@ function desenharLancamento() {
         ${zs.length ? `<div class="linha" style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF2F5">
           ${zs.map(z => z.contagem
             ? `<span class="linha" style="gap:8px"><span style="font-size:14px">${z.nome}</span>
-                 <input type="number" min="0" style="width:70px" data-campo="${p.id}|${z.id}" value="${d[z.id] ?? ""}"></span>`
+                 <input type="number" min="0" style="width:70px" data-campo="${p.id}|${z.id}" value="${d[z.id] ?? ""}">
+                 <span style="font-size:12px;color:var(--ambar);font-weight:600">${rotuloZera(p.cargo, z)}</span></span>`
             : `<button class="chave" data-chave="${p.id}|${z.id}" data-on="${d[z.id] ? 1 : 0}">
-                 <span class="quadrado"></span> ${z.nome} <span class="pena">zera o bônus</span></button>`
+                 <span class="quadrado"></span> ${z.nome} <span class="pena">${rotuloZera(p.cargo, z)}</span></button>`
           ).join("")}
         </div>` : ""}
       </div>`;
@@ -788,27 +900,64 @@ function telaDesempenho(tela) {
         <h2>Comparativo do mês</h2>
         ${graficoBarras(cls)}
       </div>
+      <div class="cartao">
+        <h2>Rendimento do mês</h2>
+        <p>O que cada um conquistou até aqui, indicador por indicador.</p>
+        ${cls.map(({ pessoa, a }) => `
+          <div style="border:1px solid var(--linha);border-radius:8px;padding:14px;margin-bottom:12px">
+            <div class="linha" style="margin-bottom:10px">
+              <b style="color:var(--tinta);font-size:16px">${esc(pessoa.nome)}</b>
+              <span style="color:var(--fraco);font-size:13px">${esc(pessoa.hub)}</span>
+              <span class="empurra" style="font-size:20px;font-weight:700;color:var(--verde)">${dinheiro(a.ganho)}</span>
+              <span style="font-size:13px;color:var(--fraco)">de ${dinheiro(a.previsto)}</span>
+            </div>
+            <table>
+              ${a.detalhe.map(d => {
+                if (!d.medido) return `<tr><td>${esc(d.ind.nome)}</td><td colspan="2" style="color:#B0BCC9">sem dado no mês</td><td class="n" style="color:#B0BCC9">—</td></tr>`;
+                const v = d.ind.agregacao === "soma" ? d.valor : d.valor.toFixed(1);
+                const pct = Math.round(d.fatia * 100);
+                return `<tr>
+                  <td style="width:34%">${esc(d.ind.nome)}
+                    ${d.cortes.length ? `<span style="display:block;font-size:11px;color:var(--vermelho)">zerado por ${esc(d.cortes.join(" e ").toLowerCase())}</span>` : ""}</td>
+                  <td style="width:20%">${v}${d.ind.unidade}</td>
+                  <td style="width:26%">
+                    <div style="background:#E8EDF2;border-radius:3px;height:8px;overflow:hidden">
+                      <div style="background:${pct >= 100 ? "var(--verde)" : (pct > 0 ? "var(--ambar)" : "var(--vermelho)")};height:8px;width:${pct}%"></div>
+                    </div>
+                    <span style="font-size:11px;color:var(--fraco)">${pct}% de ${dinheiro(d.ind.valor)}</span>
+                  </td>
+                  <td class="n">${dinheiro(d.ganho)}</td>
+                </tr>`;
+              }).join("")}
+            </table>
+          </div>`).join("")}
+        <p style="font-size:13px;color:var(--fraco);margin:0">
+          Indicador sem dado no mês não entra na conta, nem no valor conquistado nem no total possível.
+        </p>
+      </div>
+
       <div class="cartao" style="padding:0;overflow:hidden">
         <h2 style="padding:18px 18px 12px">Detalhe por pessoa</h2>
         <div class="rolagem">
           <table>
             <thead><tr><th>Pessoa</th>
-              ${indicadoresDe(cargoVisivel).map(i => `<th>${esc(i.nome)}</th>`).join("")}
-              <th style="text-align:right">Pontos</th></tr></thead>
+              ${indicadoresPagos(cargoVisivel).map(i => `<th>${esc(i.nome)}</th>`).join("")}
+              <th style="text-align:right">Atingimento</th><th style="text-align:right">Bônus</th></tr></thead>
             <tbody>
               ${cls.map(({ pessoa, a }) => `<tr>
                 <td><b style="color:var(--tinta)">${esc(pessoa.nome)}</b>
                     <span style="display:block;font-size:11px;color:#94A3B3">${esc(pessoa.hub)}${a.temZerador ? " · bônus zerado" : ""}</span></td>
-                ${indicadoresDe(cargoVisivel).map(i => {
+                ${indicadoresPagos(cargoVisivel).map(i => {
                   const d = a.detalhe.find(x => x.ind.id === i.id);
                   if (!d) return `<td style="color:#B0BCC9">fora</td>`;
                   if (!d.medido) return `<td style="color:#B0BCC9">sem dado</td>`;
                   const v = d.ind.agregacao === "soma" ? d.valor : d.valor.toFixed(1);
-                  const fatia = d.ind.modo === "proporcional"
-                    ? `<span style="display:block;font-size:11px;color:#94A3B3">${Math.round(d.fatia * 100)}% do peso</span>` : "";
+                  const fatia = d.ind.modo === "binario" ? "" :
+                    `<span style="display:block;font-size:11px;color:#94A3B3">${Math.round(d.fatia * 100)}%</span>`;
                   return `<td><span class="${d.bateu ? "ok" : "nao"}">${d.bateu ? "✓" : "✕"}</span> ${v}${d.ind.unidade}${fatia}</td>`;
                 }).join("")}
-                <td class="n">${a.pontos}</td>
+                <td class="n">${a.pontos}%</td>
+                <td class="n" style="color:var(--verde)">${dinheiro(a.ganho)}</td>
               </tr>`).join("")}
             </tbody>
           </table>
@@ -893,14 +1042,15 @@ function telaDestaque(tela) {
           <div class="retrato">${campeao.pessoa.foto ? `<img src="${campeao.pessoa.foto}" alt="">` : "Envie a foto na aba Equipe"}</div>
           <div class="quem">${esc(campeao.pessoa.nome)}</div>
           <div class="papel">${CARGOS[campeao.pessoa.cargo].rotulo} — ${esc(campeao.pessoa.hub)}</div>
-          <div class="pontos">${campeao.a.pontos} pontos</div>
+          <div class="pontos">${dinheiro(campeao.a.ganho)}</div>
+          <div class="papel" style="margin-top:8px">${campeao.a.pontos}% do bônus possível</div>
         </div>
         <div class="porque">POR QUE GANHOU</div>
         <table>
           ${campeao.a.detalhe.filter(d => d.medido).map(d => `<tr>
             <td style="font-weight:600;color:var(--tinta)">${esc(d.ind.nome)}</td>
             <td style="color:var(--fraco)">${d.ind.agregacao === "soma" ? d.valor : d.valor.toFixed(1)}${d.ind.unidade}</td>
-            <td style="text-align:right;font-weight:700;color:${d.fatia >= 1 ? "var(--verde)" : (d.fatia > 0 ? "var(--ambar)" : "var(--vermelho)")}">${Math.round(d.fatia * d.ind.peso)} de ${d.ind.peso}</td>
+            <td style="text-align:right;font-weight:700;color:${d.fatia >= 1 ? "var(--verde)" : (d.fatia > 0 ? "var(--ambar)" : "var(--vermelho)")}">${dinheiro(d.ganho)}</td>
           </tr>`).join("")}
         </table>
         <div class="rodape">Prêmio entregue na cerimônia mensal, na frente da equipe.
@@ -913,7 +1063,7 @@ function telaDestaque(tela) {
             <td style="width:40px;color:#94A3B3;font-weight:600">${i + 1}</td>
             <td><b style="color:var(--tinta)">${esc(x.pessoa.nome)}</b>
                 <span style="display:block;font-size:11px;color:#94A3B3">${esc(x.pessoa.hub)} · ${x.a.medidos} de ${x.a.total} indicadores medidos</span></td>
-            <td class="n">${x.a.pontos}</td>
+            <td class="n">${dinheiro(x.a.ganho)}</td>
           </tr>`).join("")}
         </table>
       </div>`}`;
