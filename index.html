@@ -238,9 +238,23 @@ const PADRAO = {
 /* Cada fato de conduta zera um indicador específico, não o bônus inteiro */
 const ZERADORES = [
   { id: "trocaIrregular",  nome: "Troca de escala fora do processo", cargos: ["varanda", "expedicao"], padrao: "ponto" },
-  { id: "freelaExcedente", nome: "Freela acima do limite da escala", cargos: ["varanda", "expedicao"], padrao: "faltas" },
-  { id: "reembolsos",      nome: "Reembolso por pedido errado",      cargos: ["expedicao"], padrao: "area", contagem: true }
+  { id: "freelaExcedente", nome: "Freela acima do limite da escala", cargos: ["varanda", "expedicao"], padrao: "faltas" }
 ];
+
+/* Descontos: custam um valor fixo por ocorrência, tirado do bônus no fim do mês.
+   Não zeram nem reduzem indicador nenhum. */
+const DESCONTO_PADRAO = 15;
+const DESCONTOS = [
+  { id: "reembolsos", nome: "Pedido errado", cargos: ["expedicao"], valor: DESCONTO_PADRAO }
+];
+function descontosDe(cargo) {
+  const mapa = (dados.descontos && dados.descontos[cargo]) || {};
+  return DESCONTOS.filter(d => d.cargos.indexOf(cargo) >= 0)
+    .map(d => {
+      const v = mapa[d.id];
+      return Object.assign({}, d, { valor: (v === undefined || v === null || v === "") ? d.valor : Number(v) });
+    });
+}
 
 const dinheiro = v => "R$ " + (Math.round(v * 100) / 100).toFixed(2).replace(".", ",");
 
@@ -351,15 +365,30 @@ function apurar(linhas, pessoa) {
 
   const medidos = detalhe.filter(d => d.medido);
   const disponivel = medidos.reduce((a, d) => a + (Number(d.ind.valor) || 0), 0);
-  const ganho = medidos.reduce((a, d) => a + d.ganho, 0);
+  const ganhoBruto = medidos.reduce((a, d) => a + d.ganho, 0);
   const previsto = inds.reduce((a, i) => a + (Number(i.valor) || 0), 0);
 
-  /* A nota é o quanto do dinheiro disponível foi conquistado */
-  const pontos = disponivel > 0 ? Math.round((ganho / disponivel) * 100) : null;
+  /* Descontos: valor fixo por ocorrência, tirado do bônus depois da conta
+     dos indicadores. Não entram no atingimento e o bônus não fica negativo. */
+  const ds = descontosDe(pessoa.cargo);
+  const ocorrencias = {};
+  let descontado = 0;
+  ds.forEach(d => {
+    const n = l.reduce((a, r) => a + (numero(r[d.id]) ?? 0), 0);
+    ocorrencias[d.id] = n;
+    descontado += n * (Number(d.valor) || 0);
+  });
+  descontado = Math.min(descontado, ganhoBruto);
+  const ganho = ganhoBruto - descontado;
+
+  /* A nota é o quanto do dinheiro disponível foi conquistado nos indicadores.
+     O desconto não mexe nela: ele tira dinheiro, não atingimento. */
+  const pontos = disponivel > 0 ? Math.round((ganhoBruto / disponivel) * 100) : null;
   const temZerador = Object.keys(zerado).length > 0;
 
   return { detalhe, medidos: medidos.length, total: detalhe.length, pontos,
-           ganho, disponivel, previsto, marcas, zerado, temZerador, semanas: l.length };
+           ganho, ganhoBruto, descontado, ocorrencias, descontos: ds,
+           disponivel, previsto, marcas, zerado, temZerador, semanas: l.length };
 }
 
 /* ---------- semanas: segunda a domingo, mês do domingo ---------- */
@@ -377,7 +406,7 @@ const mesPorExtenso = m => { if (!m) return ""; const [a, mm] = m.split("-"); re
 /* =====================================================================
    Estado
 ===================================================================== */
-let dados = { people: [], weeks: [], records: {}, config: null, zeradores: null, teto: null, hubs: null };
+let dados = { people: [], weeks: [], records: {}, config: null, zeradores: null, teto: null, hubs: null, descontos: null };
 let aba = "equipe";
 let mesEscolhido = null;
 let semanaAberta = null;
@@ -414,9 +443,11 @@ async function carregar() {
       const d = await r.json();
       dados = { people: d.people || [], weeks: d.weeks || [], records: d.records || {},
                 config: d.config || null, zeradores: d.zeradores || null, teto: d.teto || null,
-                hubs: (d.hubs && d.hubs.length) ? d.hubs : null };
+                hubs: (d.hubs && d.hubs.length) ? d.hubs : null,
+                descontos: d.descontos || null };
       if (!dados.config) dados.config = clone(PADRAO);
       if (!dados.zeradores) dados.zeradores = { varanda: {}, expedicao: {} };
+  if (!dados.descontos) dados.descontos = { varanda: {}, expedicao: {} };
       if (!dados.teto) dados.teto = { varanda: TETO_PADRAO, expedicao: TETO_PADRAO };
       return true;
     } catch (e) {
@@ -665,6 +696,7 @@ function telaIndicadores(tela) {
   const teto = tetoDe(cargoVisivel);
   const desajustado = Math.abs(total - teto) > 0.01;
   const zs = zeradoresDe(cargoVisivel);
+  const dsc = descontosDe(cargoVisivel);
 
   tela.innerHTML = `
     ${seletorCargo()}
@@ -761,7 +793,24 @@ function telaIndicadores(tela) {
           </tbody>
         </table>
       </div>
-    </div>`;
+    </div>
+
+    ${dsc.length ? `<div class="cartao">
+      <h2>Descontos</h2>
+      <p>Custam um valor fixo por ocorrência, tirado do bônus no fim do mês. Não zeram nem reduzem indicador nenhum,
+         e não mexem no atingimento. O bônus nunca fica negativo: o desconto para quando zera.</p>
+      <div class="rolagem">
+        <table>
+          <thead><tr><th style="width:55%">Aconteceu</th><th>Custa por ocorrência</th></tr></thead>
+          <tbody>
+            ${dsc.map(d => `<tr>
+              <td>${esc(d.nome)}</td>
+              <td><input type="number" min="0" step="any" style="width:110px" data-desc="${d.id}" value="${d.valor}"></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ""}`;
 
   ligarSeletorCargo(tela, telaIndicadores);
 
@@ -774,6 +823,12 @@ function telaIndicadores(tela) {
     dados.zeradores[cargoVisivel] = dados.zeradores[cargoVisivel] || {};
     dados.zeradores[cargoVisivel][el.dataset.zer] = el.value;
     await salvar("Conduta atualizada.");
+  });
+  tela.querySelectorAll("[data-desc]").forEach(el => el.onchange = async () => {
+    dados.descontos[cargoVisivel] = dados.descontos[cargoVisivel] || {};
+    dados.descontos[cargoVisivel][el.dataset.desc] = Math.max(0, Number(el.value) || 0);
+    el.value = dados.descontos[cargoVisivel][el.dataset.desc];
+    await salvar("Desconto atualizado.");
   });
   tela.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
     if (!confirm("Excluir o indicador \"" + lst[b.dataset.del].nome + "\"? Os lançamentos já feitos continuam guardados.")) return;
@@ -808,6 +863,7 @@ function telaIndicadores(tela) {
     if (!confirm("Restaurar a sugestão de indicadores e valores deste cargo?")) return;
     dados.config[cargoVisivel] = clone(PADRAO[cargoVisivel]);
     dados.zeradores[cargoVisivel] = {};
+    dados.descontos[cargoVisivel] = {};
     dados.teto[cargoVisivel] = TETO_PADRAO;
     await salvar("Sugestão restaurada.");
     telaIndicadores(tela);
@@ -880,6 +936,7 @@ function desenharLancamento() {
       const d = rascunho[p.id] || {};
       const inds = indicadoresDaPessoa(p);
       const zs = zeradoresDe(p.cargo);
+      const dsc = descontosDe(p.cargo);
       return `
       <div class="cartao">
         <div class="linha" style="margin-bottom:14px">
@@ -894,7 +951,7 @@ function desenharLancamento() {
               <input type="number" step="any" data-campo="${p.id}|${i.id}" value="${d[i.id] ?? ""}">
             </label>`).join("")}
         </div>
-        ${zs.length ? `<div class="linha" style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF2F5">
+        ${(zs.length || dsc.length) ? `<div class="linha" style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF2F5">
           ${zs.map(z => z.contagem
             ? `<span class="linha" style="gap:8px"><span style="font-size:14px">${z.nome}</span>
                  <input type="number" min="0" style="width:70px" data-campo="${p.id}|${z.id}" value="${d[z.id] ?? ""}">
@@ -902,6 +959,9 @@ function desenharLancamento() {
             : `<button class="chave" data-chave="${p.id}|${z.id}" data-on="${d[z.id] ? 1 : 0}">
                  <span class="quadrado"></span> ${z.nome} <span class="pena">${rotuloZera(p.cargo, z)}</span></button>`
           ).join("")}
+          ${dsc.map(x => `<span class="linha" style="gap:8px"><span style="font-size:14px">${esc(x.nome)}</span>
+                 <input type="number" min="0" style="width:70px" data-campo="${p.id}|${x.id}" value="${d[x.id] ?? ""}">
+                 <span style="font-size:12px;color:var(--vermelho);font-weight:600">−${dinheiro(x.valor)} cada</span></span>`).join("")}
         </div>` : ""}
       </div>`;
     }).join("")}
@@ -1001,6 +1061,10 @@ function telaDesempenho(tela) {
               <span class="empurra" style="font-size:20px;font-weight:700;color:var(--verde)">${dinheiro(a.ganho)}</span>
               <span style="font-size:13px;color:var(--fraco)">de ${dinheiro(a.previsto)}</span>
             </div>
+            ${a.descontado > 0 ? `<p style="margin:0 0 10px;font-size:13px;color:var(--vermelho)">
+              ${a.descontos.filter(x => a.ocorrencias[x.id] > 0).map(x =>
+                `${a.ocorrencias[x.id]} ${esc(x.nome.toLowerCase())}${a.ocorrencias[x.id] > 1 ? "s" : ""} × ${dinheiro(x.valor)}`
+              ).join(" · ")} — desconto de ${dinheiro(a.descontado)} sobre ${dinheiro(a.ganhoBruto)} dos indicadores</p>` : ""}
             <table>
               ${a.detalhe.map(d => {
                 if (!d.medido) return `<tr><td>${esc(d.ind.nome)}</td><td colspan="2" style="color:#B0BCC9">sem dado no mês</td><td class="n" style="color:#B0BCC9">—</td></tr>`;
@@ -1036,7 +1100,7 @@ function telaDesempenho(tela) {
             <tbody>
               ${cls.map(({ pessoa, a }) => `<tr>
                 <td><b style="color:var(--tinta)">${esc(pessoa.nome)}</b>
-                    <span style="display:block;font-size:11px;color:#94A3B3">${esc(pessoa.hub)}${a.temZerador ? " · bônus zerado" : ""}</span></td>
+                    <span style="display:block;font-size:11px;color:#94A3B3">${esc(pessoa.hub)}${a.temZerador ? " · bônus zerado" : ""}${a.descontado > 0 ? " · −" + dinheiro(a.descontado) : ""}</span></td>
                 ${indicadoresPagos(cargoVisivel).map(i => {
                   const d = a.detalhe.find(x => x.ind.id === i.id);
                   if (!d) return `<td style="color:#B0BCC9">fora</td>`;

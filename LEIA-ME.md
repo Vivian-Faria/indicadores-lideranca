@@ -133,15 +133,28 @@ primeira semana e 100% na segunda, vale 100%, não a média das duas.
 
 ## Conduta
 
-Troca de escala fora do processo, freela acima do limite e reembolso por pedido
-errado **não zeram o bônus inteiro**. Cada um zera apenas o indicador ligado a
-ele, configurável na aba Indicadores:
+Troca de escala fora do processo e freela acima do limite **não zeram o bônus
+inteiro**. Cada um zera apenas o indicador ligado a ele, configurável na aba
+Indicadores:
 
 | Aconteceu | Zera |
 |---|---|
 | Troca de escala fora do processo | Escala preenchida |
 | Freela acima do limite da escala | Faltas não cobertas |
-| Reembolso por pedido errado | Tempo de atendimento |
+
+## Descontos
+
+Pedido errado **não mexe em indicador nenhum**. Ele custa um valor fixo por
+ocorrência, tirado do bônus depois da conta dos indicadores:
+
+| Aconteceu | Custa por ocorrência |
+|---|---|
+| Pedido errado | R$ 15,00 |
+
+O valor é editável na aba Indicadores. Três pedidos errados num mês de bônus
+cheio deixam R$ 455,00 no lugar de R$ 500,00. O atingimento continua o mesmo,
+porque o desconto tira dinheiro e não desempenho, e o bônus nunca fica
+negativo: o desconto para quando o valor chega a zero.
 
 ---
 
