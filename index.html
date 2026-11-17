@@ -72,6 +72,11 @@
   .g4 { grid-template-columns: repeat(4, 1fr); }
   .g5 { grid-template-columns: repeat(5, 1fr); }
   .linha { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .hubs { display: flex; gap: 10px; flex-wrap: wrap; }
+  .hubchip { display: inline-flex; align-items: center; gap: 10px; background: #fff;
+             border: 1px solid #CBD5E0; border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+  .hubchip .cont { color: var(--fraco); font-size: 12px; }
+  select.hubsel { font-size: 13px; padding: 3px 6px; height: auto; margin-top: 4px; }
   .empurra { margin-left: auto; }
 
   /* tabelas */
@@ -198,7 +203,18 @@ const CARGOS = {
   expedicao: { rotulo: "Líder de Expedição", curto: "Expedição" }
 };
 
-const HUBS = ["Sion", "Buritis", "Cidade Nova", "Pampulha"];
+/* Lista inicial de hubs. A lista em uso fica em dados.hubs e é editada na aba Equipe. */
+const HUBS_PADRAO = ["Sion", "Buritis", "Cidade Nova", "Pampulha"];
+function hubs() {
+  return (dados.hubs && dados.hubs.length) ? dados.hubs : HUBS_PADRAO;
+}
+/* Opções do seletor de hub. Mantém o hub atual da pessoa mesmo que ele
+   tenha saído da lista, para não trocar o hub de alguém sem querer. */
+function opcoesHub(atual) {
+  const lista = hubs().slice();
+  if (atual && lista.indexOf(atual) < 0) lista.push(atual);
+  return lista.map(h => `<option ${h === atual ? "selected" : ""}>${esc(h)}</option>`).join("");
+}
 const CORES = ["#1C7A4A", "#0F1B2B", "#B26A00", "#A8291A", "#3D6E8C", "#6B4E9E"];
 
 /* Padrão de fábrica. Serve de base na primeira execução e no botão
@@ -361,7 +377,7 @@ const mesPorExtenso = m => { if (!m) return ""; const [a, mm] = m.split("-"); re
 /* =====================================================================
    Estado
 ===================================================================== */
-let dados = { people: [], weeks: [], records: {}, config: null, zeradores: null, teto: null };
+let dados = { people: [], weeks: [], records: {}, config: null, zeradores: null, teto: null, hubs: null };
 let aba = "equipe";
 let mesEscolhido = null;
 let semanaAberta = null;
@@ -397,7 +413,8 @@ async function carregar() {
       if (!r.ok) throw new Error();
       const d = await r.json();
       dados = { people: d.people || [], weeks: d.weeks || [], records: d.records || {},
-                config: d.config || null, zeradores: d.zeradores || null, teto: d.teto || null };
+                config: d.config || null, zeradores: d.zeradores || null, teto: d.teto || null,
+                hubs: (d.hubs && d.hubs.length) ? d.hubs : null };
       if (!dados.config) dados.config = clone(PADRAO);
       if (!dados.zeradores) dados.zeradores = { varanda: {}, expedicao: {} };
       if (!dados.teto) dados.teto = { varanda: TETO_PADRAO, expedicao: TETO_PADRAO };
@@ -473,13 +490,27 @@ function telaEquipe(tela) {
       <div class="grade g4">
         <input type="text" id="nvNome" placeholder="Nome" style="grid-column: span 2">
         <select id="nvCargo">${Object.keys(CARGOS).map(c => `<option value="${c}">${CARGOS[c].rotulo}</option>`).join("")}</select>
-        <select id="nvHub">${HUBS.map(h => `<option>${h}</option>`).join("")}</select>
+        <select id="nvHub">${opcoesHub(null)}</select>
       </div>
       <div style="margin-top:12px"><button class="acao" id="btAdd">Adicionar</button></div>
     </div>
+
+    <div class="cartao">
+      <h2>Hubs</h2>
+      <p>A lista que aparece no cadastro e na ficha de cada pessoa. Um hub com gente dentro não pode ser removido.</p>
+      <div class="grade g4">
+        <input type="text" id="nvHubNome" placeholder="Nome do novo hub" style="grid-column: span 2">
+        <button class="acao" id="btAddHub">Adicionar hub</button>
+      </div>
+      <div class="hubs" id="listaHubs" style="margin-top:14px"></div>
+    </div>
+
     <div id="listaPessoas"></div>`;
   document.getElementById("btAdd").onclick = adicionarPessoa;
   document.getElementById("nvNome").onkeydown = e => { if (e.key === "Enter") adicionarPessoa(); };
+  document.getElementById("btAddHub").onclick = adicionarHub;
+  document.getElementById("nvHubNome").onkeydown = e => { if (e.key === "Enter") adicionarHub(); };
+  listarHubs();
   listarPessoas();
 }
 
@@ -490,6 +521,51 @@ async function adicionarPessoa() {
   document.getElementById("nvNome").value = "";
   await salvar(nome + " entrou na equipe.");
   listarPessoas();
+}
+
+function listarHubs() {
+  const alvo = document.getElementById("listaHubs");
+  if (!alvo) return;
+  alvo.innerHTML = hubs().map(h => {
+    const n = dados.people.filter(p => p.hub === h).length;
+    return `<span class="hubchip">${esc(h)}
+      <span class="cont">${n ? n + (n === 1 ? " pessoa" : " pessoas") : "sem ninguém"}</span>
+      <button class="mini" data-delhub="${esc(h)}">Remover</button></span>`;
+  }).join("");
+  alvo.querySelectorAll("[data-delhub]").forEach(b => b.onclick = () => removerHub(b.dataset.delhub));
+}
+
+function atualizarSeletorNovo() {
+  const sel = document.getElementById("nvHub");
+  if (!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = opcoesHub(null);
+  if (hubs().indexOf(atual) >= 0) sel.value = atual;
+}
+
+async function adicionarHub() {
+  const campo = document.getElementById("nvHubNome");
+  const nome = campo.value.trim();
+  if (!nome) return;
+  if (hubs().some(h => h.toLowerCase() === nome.toLowerCase())) {
+    recado("Esse hub já está na lista.", true); return;
+  }
+  dados.hubs = hubs().concat([nome]);
+  campo.value = "";
+  await salvar(nome + " entrou na lista de hubs.");
+  atualizarSeletorNovo(); listarHubs(); listarPessoas();
+}
+
+async function removerHub(nome) {
+  const n = dados.people.filter(p => p.hub === nome).length;
+  if (n) {
+    recado("Há " + n + (n === 1 ? " pessoa" : " pessoas") + " nesse hub. Mude o hub de quem está lá antes de remover.", true);
+    return;
+  }
+  if (!confirm(`Remover o hub ${nome} da lista?`)) return;
+  dados.hubs = hubs().filter(h => h !== nome);
+  await salvar(nome + " saiu da lista de hubs.");
+  atualizarSeletorNovo(); listarHubs(); listarPessoas();
 }
 
 function listarPessoas() {
@@ -510,7 +586,7 @@ function listarPessoas() {
           <div style="min-width:0;flex:1">
             <div class="nome">${esc(p.nome)}</div>
             <div class="cargo">${CARGOS[p.cargo].rotulo}</div>
-            <div class="cargo" style="color:#94A3B3">${esc(p.hub)}</div>
+            <select class="hubsel" data-hub="${p.id}">${opcoesHub(p.hub)}</select>
             <div style="margin-top:8px"><button class="mini" data-remove="${p.id}">Remover</button></div>
           </div>
         </div>
@@ -532,6 +608,13 @@ function listarPessoas() {
   dados.people.forEach(p => {
     const inp = document.getElementById("arq-" + p.id);
     if (inp) inp.onchange = e => enviarFoto(p, e.target.files && e.target.files[0]);
+  });
+  alvo.querySelectorAll("[data-hub]").forEach(sel => sel.onchange = async () => {
+    const p = dados.people.find(x => x.id === sel.dataset.hub);
+    if (!p) return;
+    p.hub = sel.value;
+    await salvar(p.nome + " agora está no hub " + sel.value + ".");
+    listarHubs();
   });
   alvo.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => removerPessoa(b.dataset.remove));
   alvo.querySelectorAll("[data-ind]").forEach(c => c.onchange = async () => {
