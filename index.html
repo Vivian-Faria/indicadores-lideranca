@@ -319,10 +319,78 @@ function zeradoresDe(cargo) {
   return ZERADORES.filter(z => z.cargos.indexOf(cargo) >= 0)
     .map(z => Object.assign({}, z, { alvo: mapa[z.id] !== undefined ? mapa[z.id] : z.padrao }));
 }
+/* =====================================================================
+   O QUE A ÁREA DECIDE
+
+   As áreas marcadas no card da pessoa decidem O QUE ela é medida:
+   indicadores, zeradores e descontos saem da união das áreas dela.
+   Quem responde pela Expedição é medido pelo tempo de atendimento e
+   leva o desconto de pedido errado, mesmo que o cargo seja Varanda.
+
+   O CARGO continua decidindo QUANTO ela pode ganhar: o teto é o do
+   cargo. Acumular uma segunda área não aumenta o bônus — espalha o
+   mesmo teto por mais indicadores, e cada um passa a valer um pouco
+   menos.
+   ===================================================================== */
+
+/* Sem área marcada, cai no cargo, para ninguém ficar sem conta. */
+function areasDaConta(p) {
+  const as = areasDe(p);
+  return as.length ? as : [p.cargo];
+}
+
+/* Quando o mesmo indicador existe nas duas áreas, vale a versão do cargo
+   da pessoa — é o papel principal dela, e é lá que meta e valor foram
+   pensados para ela. */
+function ordemDasAreas(p) {
+  return areasDaConta(p).slice().sort((a, b) => (a === p.cargo ? -1 : b === p.cargo ? 1 : 0));
+}
+
+function indicadoresCrusDaPessoa(p) {
+  const vistos = {}, saida = [];
+  ordemDasAreas(p).forEach(a => (indicadoresDe(a) || []).forEach(i => {
+    if (vistos[i.id]) return;
+    vistos[i.id] = true;
+    saida.push(i);
+  }));
+  return saida;
+}
+
+/* Mesma regra do teto de antes, só que sobre a lista da pessoa: o mês
+   perfeito paga exatamente o teto do cargo, nunca mais que isso. */
+function indicadoresPagosDaPessoa(p) {
+  const lista = indicadoresCrusDaPessoa(p);
+  const soma = lista.reduce((a, i) => a + (Number(i.valor) || 0), 0);
+  const teto = tetoDe(p.cargo);
+  if (soma <= 0) return lista.map(i => Object.assign({}, i, { valor: 0 }));
+  const fator = teto / soma;
+  return lista.map(i => Object.assign({}, i, { valor: (Number(i.valor) || 0) * fator }));
+}
+
+function zeradoresDaPessoa(p) {
+  const vistos = {}, saida = [];
+  areasDaConta(p).forEach(a => zeradoresDe(a).forEach(z => {
+    if (vistos[z.id]) return;
+    vistos[z.id] = true;
+    saida.push(z);
+  }));
+  return saida;
+}
+
+function descontosDaPessoa(p) {
+  const vistos = {}, saida = [];
+  areasDaConta(p).forEach(a => descontosDe(a).forEach(d => {
+    if (vistos[d.id]) return;
+    vistos[d.id] = true;
+    saida.push(d);
+  }));
+  return saida;
+}
+
 /* Uma pessoa pode ter indicadores desligados individualmente */
 function indicadoresDaPessoa(p) {
   const fora = p.semIndicador || [];
-  return indicadoresPagos(p.cargo).filter(i => fora.indexOf(i.id) < 0);
+  return indicadoresPagosDaPessoa(p).filter(i => fora.indexOf(i.id) < 0);
 }
 
 function bate(ind, valor) {
@@ -368,7 +436,7 @@ function apurar(linhas, pessoa) {
   };
 
   /* Um zerador derruba só o indicador ao qual está ligado */
-  const zs = zeradoresDe(pessoa.cargo);
+  const zs = zeradoresDaPessoa(pessoa);
   const marcas = {};
   zs.forEach(z => {
     marcas[z.id] = z.contagem
@@ -400,7 +468,7 @@ function apurar(linhas, pessoa) {
 
   /* Descontos: valor fixo por ocorrência, tirado do bônus depois da conta
      dos indicadores. Não entram no atingimento e o bônus não fica negativo. */
-  const ds = descontosDe(pessoa.cargo);
+  const ds = descontosDaPessoa(pessoa);
   const ocorrencias = {};
   let descontado = 0;
   ds.forEach(d => {
@@ -638,7 +706,8 @@ function listarPessoas() {
     alvo.innerHTML = `<p class="vazio">Ainda não há ninguém cadastrado.</p>`; return;
   }
   alvo.innerHTML = `<div class="pessoas">` + dados.people.map(p => {
-    const inds = indicadoresDe(p.cargo);
+    /* Mostra a lista real da pessoa, já ajustada ao teto — é o que ela pontua. */
+    const inds = indicadoresPagosDaPessoa(p);
     const fora = p.semIndicador || [];
     return `
       <div class="pessoa">
@@ -965,6 +1034,19 @@ function telaApuracao(tela) {
   desenharLancamento();
 }
 
+/* Colunas da tabela de desempenho: a união dos indicadores de quem está
+   na lista. Sem isso, quem acumula uma área perde a coluna do indicador
+   extra, porque as colunas vinham só do cargo em exibição. */
+function colunasDe(cls) {
+  const vistos = {}, saida = [];
+  cls.forEach(({ pessoa }) => indicadoresPagosDaPessoa(pessoa).forEach(i => {
+    if (vistos[i.id]) return;
+    vistos[i.id] = true;
+    saida.push(i);
+  }));
+  return saida;
+}
+
 function rotuloZera(cargo, z) {
   if (!z.alvo) return "não zera nada";
   const i = indicadoresDe(cargo).find(x => x.id === z.alvo);
@@ -993,8 +1075,8 @@ function desenharLancamento() {
     ${dados.people.map(p => {
       const d = rascunho[p.id] || {};
       const inds = indicadoresDaPessoa(p);
-      const zs = zeradoresDe(p.cargo);
-      const dsc = descontosDe(p.cargo);
+      const zs = zeradoresDaPessoa(p);
+      const dsc = descontosDaPessoa(p);
       return `
       <div class="cartao">
         <div class="linha" style="margin-bottom:14px">
@@ -1153,13 +1235,13 @@ function telaDesempenho(tela) {
         <div class="rolagem">
           <table>
             <thead><tr><th>Pessoa</th>
-              ${indicadoresPagos(cargoVisivel).map(i => `<th>${esc(i.nome)}</th>`).join("")}
+              ${colunasDe(cls).map(i => `<th>${esc(i.nome)}</th>`).join("")}
               <th style="text-align:right">Atingimento</th><th style="text-align:right">Bônus</th></tr></thead>
             <tbody>
               ${cls.map(({ pessoa, a }) => `<tr>
                 <td><b style="color:var(--tinta)">${esc(pessoa.nome)}</b>
                     <span style="display:block;font-size:11px;color:#94A3B3">${esc(pessoa.hub)}${a.temZerador ? " · bônus zerado" : ""}${a.descontado > 0 ? " · −" + dinheiro(a.descontado) : ""}</span></td>
-                ${indicadoresPagos(cargoVisivel).map(i => {
+                ${colunasDe(cls).map(i => {
                   const d = a.detalhe.find(x => x.ind.id === i.id);
                   if (!d) return `<td style="color:#B0BCC9">fora</td>`;
                   if (!d.medido) return `<td style="color:#B0BCC9">sem dado</td>`;

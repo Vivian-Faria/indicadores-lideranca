@@ -70,14 +70,27 @@ Expedição, pela Varanda ou pelas duas. Serve para registrar quem cobre o quê
 quando alguém acumula mais de uma operação — é o caso de quem assume uma
 unidade extra durante uma troca de posto.
 
-Essa marcação **não altera o bônus**. Quem decide quais indicadores a pessoa
-pontua continua sendo o **cargo**, não a área. Alguém com cargo de Líder de
-Expedição marcado também em Varanda segue sendo medido pelos indicadores de
-Expedição. Se um dia a conta tiver que mudar junto com a área, isso precisa ser
-alterado de propósito, porque mexe em dinheiro.
+**A área decide o que a pessoa é medida.** Indicadores, zeradores e descontos
+saem da união das áreas marcadas. Um Supervisor Varanda marcado também em
+Expedição passa a lançar **Tempo de atendimento** e a receber o desconto de
+**Pedido errado** — exatamente como um Líder de Expedição.
+
+**O cargo decide quanto ela pode ganhar.** O teto continua sendo o do cargo.
+Acumular uma segunda área não aumenta o bônus: espalha o mesmo teto por mais
+indicadores, e cada um passa a valer um pouco menos. Um Supervisor Varanda
+com teto de R$ 500 e 4 indicadores de R$ 125 passa, ao assumir a Expedição, a
+ter 5 indicadores somando os mesmos R$ 500.
+
+Quando o mesmo indicador existe nas duas áreas, vale a versão do **cargo** da
+pessoa — é onde meta e valor foram pensados para ela.
+
+O desconto de pedido errado é lançado **por pessoa**, na Apuração. Se duas
+pessoas respondem pela mesma Expedição, você escolhe quantas ocorrências entram
+para cada uma; o painel não divide nem duplica sozinho.
 
 Quem foi cadastrado antes deste campo existir aparece marcado na área do próprio
-cargo. Dá para desmarcar as duas; nesse caso o card mostra **Sem área marcada**.
+cargo. Dá para desmarcar as duas; nesse caso o card mostra **Sem área marcada**
+e a conta volta a usar o cargo, para ninguém ficar sem apuração.
 
 **Apuração** — escolha qualquer dia da semana que vai lançar; o painel monta a
 semana de segunda a domingo. Lance os números brutos. O painel aplica os cortes
