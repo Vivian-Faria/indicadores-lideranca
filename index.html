@@ -110,6 +110,17 @@
   .pessoa .metas div { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
   .pessoa .metas b { color: var(--tinta); }
 
+  /* áreas de responsabilidade */
+  .areas { margin-top: 8px; }
+  .areas .rotulo { font-size: 11px; color: var(--fraco); letter-spacing: .04em; margin: 0 0 3px; }
+  .areas .linhas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .areachk {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+    color: var(--tinta); cursor: pointer; user-select: none;
+  }
+  .areachk input { margin: 0; }
+  .areas .aviso { font-size: 11px; color: var(--vermelho); margin: 4px 0 0; }
+
   /* alternadores de penalidade */
   .chave {
     display: inline-flex; align-items: center; gap: 8px; font-size: 14px;
@@ -215,6 +226,25 @@ function opcoesHub(atual) {
   if (atual && lista.indexOf(atual) < 0) lista.push(atual);
   return lista.map(h => `<option ${h === atual ? "selected" : ""}>${esc(h)}</option>`).join("");
 }
+/* Áreas de responsabilidade. São independentes do cargo: dizem por qual
+   operação a pessoa responde no dia a dia, e uma pessoa pode responder
+   pelas duas. O cargo continua sendo o que define quais indicadores ela
+   pontua — marcar uma área aqui não muda bônus nem apuração. */
+const AREAS = [
+  { id: "expedicao", rotulo: "Expedição" },
+  { id: "varanda",   rotulo: "Varanda" }
+];
+/* Quem foi cadastrado antes deste campo existir herda a área do próprio
+   cargo, para ninguém aparecer sem marcação na primeira abertura. */
+function areasDe(p) {
+  return Array.isArray(p.areas) ? p.areas : [p.cargo];
+}
+function areasRotulo(p) {
+  const as = areasDe(p);
+  if (!as.length) return "";
+  return AREAS.filter(a => as.indexOf(a.id) >= 0).map(a => a.rotulo).join(" e ");
+}
+
 const CORES = ["#1C7A4A", "#0F1B2B", "#B26A00", "#A8291A", "#3D6E8C", "#6B4E9E"];
 
 /* Padrão de fábrica. Serve de base na primeira execução e no botão
@@ -548,7 +578,10 @@ function telaEquipe(tela) {
 async function adicionarPessoa() {
   const nome = document.getElementById("nvNome").value.trim();
   if (!nome) return;
-  dados.people.push({ id: "p" + Date.now(), nome, cargo: document.getElementById("nvCargo").value, hub: document.getElementById("nvHub").value, foto: null, semIndicador: [] });
+  const cargoNovo = document.getElementById("nvCargo").value;
+  /* Começa respondendo pela área do próprio cargo; dá para marcar a outra
+     (ou as duas) no card dela, na lista da equipe. */
+  dados.people.push({ id: "p" + Date.now(), nome, cargo: cargoNovo, hub: document.getElementById("nvHub").value, foto: null, semIndicador: [], areas: [cargoNovo] });
   document.getElementById("nvNome").value = "";
   await salvar(nome + " entrou na equipe.");
   listarPessoas();
@@ -618,6 +651,17 @@ function listarPessoas() {
             <div class="nome">${esc(p.nome)}</div>
             <div class="cargo">${CARGOS[p.cargo].rotulo}</div>
             <select class="hubsel" data-hub="${p.id}">${opcoesHub(p.hub)}</select>
+            <div class="areas">
+              <p class="rotulo">Responsável por</p>
+              <div class="linhas">
+                ${AREAS.map(a => `
+                  <label class="areachk">
+                    <input type="checkbox" data-area="${p.id}|${a.id}" ${areasDe(p).indexOf(a.id) >= 0 ? "checked" : ""}>
+                    ${a.rotulo}
+                  </label>`).join("")}
+              </div>
+              ${areasDe(p).length ? "" : `<p class="aviso">Sem área marcada</p>`}
+            </div>
             <div style="margin-top:8px"><button class="mini" data-remove="${p.id}">Remover</button></div>
           </div>
         </div>
@@ -629,7 +673,7 @@ function listarPessoas() {
                 <input type="checkbox" data-ind="${p.id}|${i.id}" ${fora.indexOf(i.id) < 0 ? "checked" : ""}>
                 ${esc(i.nome)}
               </span>
-              <b>${i.comparacao === "maior" ? "≥" : "≤"} ${i.meta}${i.unidade} · peso ${i.peso}</b>
+              <b>${i.comparacao === "maior" ? "≥" : "≤"} ${i.meta}${i.unidade} · ${i.peso != null ? "peso " + i.peso : dinheiro(i.valor || 0)}</b>
             </label>`).join("")}
         </div>
       </div>`;
@@ -646,6 +690,20 @@ function listarPessoas() {
     p.hub = sel.value;
     await salvar(p.nome + " agora está no hub " + sel.value + ".");
     listarHubs();
+  });
+  alvo.querySelectorAll("[data-area]").forEach(c => c.onchange = async () => {
+    const [pid, aid] = c.dataset.area.split("|");
+    const p = dados.people.find(x => x.id === pid);
+    if (!p) return;
+    const atuais = areasDe(p).slice();
+    const i = atuais.indexOf(aid);
+    if (c.checked) { if (i < 0) atuais.push(aid); }
+    else if (i >= 0) atuais.splice(i, 1);
+    /* Ordena pela ordem de AREAS para o rótulo sair sempre igual. */
+    p.areas = AREAS.filter(a => atuais.indexOf(a.id) >= 0).map(a => a.id);
+    const r = areasRotulo(p);
+    await salvar(r ? p.nome + " responde por " + r + "." : p.nome + " ficou sem área marcada.");
+    listarPessoas();
   });
   alvo.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => removerPessoa(b.dataset.remove));
   alvo.querySelectorAll("[data-ind]").forEach(c => c.onchange = async () => {

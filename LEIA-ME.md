@@ -65,6 +65,20 @@ Na primeira vez que abrir o painel, ele pede a senha.
 **Equipe** — cadastre cada supervisor ou líder com nome, cargo e hub. Clique na
 moldura cinza para enviar a foto. Abaixo de cada pessoa ficam as metas do cargo.
 
+No card de cada pessoa, em **Responsável por**, marque se ela responde pela
+Expedição, pela Varanda ou pelas duas. Serve para registrar quem cobre o quê
+quando alguém acumula mais de uma operação — é o caso de quem assume uma
+unidade extra durante uma troca de posto.
+
+Essa marcação **não altera o bônus**. Quem decide quais indicadores a pessoa
+pontua continua sendo o **cargo**, não a área. Alguém com cargo de Líder de
+Expedição marcado também em Varanda segue sendo medido pelos indicadores de
+Expedição. Se um dia a conta tiver que mudar junto com a área, isso precisa ser
+alterado de propósito, porque mexe em dinheiro.
+
+Quem foi cadastrado antes deste campo existir aparece marcado na área do próprio
+cargo. Dá para desmarcar as duas; nesse caso o card mostra **Sem área marcada**.
+
 **Apuração** — escolha qualquer dia da semana que vai lançar; o painel monta a
 semana de segunda a domingo. Lance os números brutos. O painel aplica os cortes
 sozinho. Para desfazer, use **Apagar esta semana**.
